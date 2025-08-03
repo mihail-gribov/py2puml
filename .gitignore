@@ -1,0 +1,14 @@
+# IDE
+.cursor/
+.features/
+
+# BuildArtifacts
+__pycache__/
+*.py[cod]
+
+# Python
+.pytest_cache/
+
+# Logs_Tmp
+logs/
+*.bak 
