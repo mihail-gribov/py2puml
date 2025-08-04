@@ -4,104 +4,141 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](tests/)
 
-**py2puml** - это мощный инструмент для автоматической генерации UML диаграмм из Python исходного кода. Парсер анализирует структуру классов, методов, атрибутов и их взаимосвязей, создавая точные PlantUML диаграммы.
+**py2puml** is a powerful tool for automatic generation of UML diagrams from Python source code. The parser analyzes the structure of classes, methods, attributes, and their relationships, creating accurate PlantUML diagrams.
 
-## 🚀 Возможности
+## 🚀 Features
 
-- **Полный анализ Python кода**: Парсинг классов, методов, атрибутов и глобальных переменных
-- **Генерация PlantUML диаграмм**: Автоматическое создание UML диаграмм в стандартном формате
-- **Поддержка наследования**: Корректное отображение иерархии классов
-- **Управление видимостью**: Различение public, protected и private членов классов
-- **Обработка ошибок**: Робастная обработка некорректного кода и проблем файловой системы
-- **Визуальная пометка ошибок**: Файлы с ошибками выделяются красным цветом в UML диаграммах
-- **Частичный парсинг**: Возможность обработки файлов с синтаксическими ошибками
-- **Поддержка типизации**: Анализ type hints и аннотаций типов
+- **Comprehensive Python code analysis**: Parses classes, methods, attributes, and global variables
+- **PlantUML diagram generation**: Automatically creates UML diagrams in standard format
+- **Inheritance support**: Correctly displays class hierarchies
+- **Visibility management**: Distinguishes public, protected, and private class members
+- **Robust error handling**: Handles invalid code and filesystem issues gracefully
+- **Visual error marking**: Files with errors are highlighted in red in UML diagrams
+- **Partial parsing**: Can process files with syntax errors
+- **Type hint support**: Analyzes type hints and annotations
 
-## 📊 Пример работы
-
+## 📊 Example
 
 ```bash
-# Команда для создания этой диаграммы
+# Command to generate this diagram
 python main.py . py2puml.puml
 ```
 
 ![Class Diagram](py2puml.svg)
 
-## 📋 Требования
+## 📋 Requirements
 
 - Python 3.8+
-- Стандартная библиотека Python (без внешних зависимостей)
+- pathspec>=0.11.0 (for .gitignore pattern support)
 
-## 🛠️ Установка
+## 🛠️ Installation
 
-### Клонирование репозитория
+### Clone the repository
 ```bash
 git clone https://github.com/your-username/py2puml.git
 cd py2puml
 ```
 
-### Установка зависимостей
+### Install dependencies
 ```bash
-# Создание виртуального окружения
+# Create a virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# или
+# or
 venv\Scripts\activate     # Windows
 
-# Установка зависимостей для разработки
+# Install development dependencies
 pip install -r requirements.txt
 ```
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
-### Базовое использование
+### Basic usage
 ```bash
 python main.py ./my_python_project ./output/uml_diagram.puml
 ```
 
-### Примеры использования
+### Usage examples
 
-**Анализ одного файла:**
+**Analyze a single file:**
 ```bash
 python main.py ./src/models.py ./output/models.puml
 ```
 
-**Анализ целого проекта:**
+**Analyze an entire project:**
 ```bash
 python main.py ./my_project ./output/project_uml.puml
 ```
 
-**Создание SVG диаграммы:**
+**Create an SVG diagram:**
 ```bash
-# Генерируем PlantUML файл
+# Generate PlantUML file
 python main.py ./my_project ./output/diagram.puml
 
-# Конвертируем в SVG (требует установки PlantUML)
+# Convert to SVG (requires PlantUML)
 plantuml -tsvg ./output/diagram.puml
 ```
 
-## 📖 Документация API
+### Gitignore Support
+
+The tool supports `.gitignore` patterns to exclude files from UML generation:
+
+```bash
+# Use .gitignore patterns (default)
+python main.py ./my_project ./output/diagram.puml
+
+# Disable .gitignore patterns
+python main.py --no-gitignore ./my_project ./output/diagram.puml
+```
+
+#### Examples
+
+**Basic .gitignore:**
+```
+__pycache__/
+*.pyc
+venv/
+```
+
+**Advanced .gitignore:**
+```
+# Ignore test files
+tests/
+*_test.py
+
+# Ignore generated files
+*.pyc
+__pycache__/
+
+# Ignore virtual environments
+venv/
+.venv/
+```
+
+The tool automatically finds all `.gitignore` files in the project and applies their patterns relative to each file's location, just like Git does.
+
+## 📖 API Documentation
 
 ### UMLGenerator
 
-Основной класс для генерации UML диаграмм.
+The main class for generating UML diagrams.
 
-#### Конструктор
+#### Constructor
 ```python
 UMLGenerator(directory_path: str)
 ```
-- `directory_path` - путь к директории с Python файлами
+- `directory_path` - path to the directory with Python files
 
-#### Основные методы
+#### Main methods
 
 **generate_uml() -> str**
-Генерирует PlantUML код для всех Python файлов в директории.
+Generates PlantUML code for all Python files in the directory.
 
 **parse_python_file(file_path: Path) -> tuple**
-Парсит отдельный Python файл, возвращая кортеж с классами, функциями, глобальными переменными и базовыми классами.
+Parses a single Python file, returning a tuple with classes, functions, global variables, and base classes.
 
 **visibility(name: str) -> tuple**
-Определяет видимость члена класса по его имени:
+Determines the visibility of a class member by its name:
 - `__name__` → `~` (magic/private)
 - `__name` → `-` (private)
 - `_name` → `#` (protected)
@@ -110,86 +147,90 @@ UMLGenerator(directory_path: str)
 ### CLI Interface
 
 ```bash
-python main.py <input_directory> <output_file>
+python main.py <input_directory> <output_file> [options]
 ```
 
-**Аргументы:**
-- `input_directory` - путь к директории с Python файлами
-- `output_file` - путь к выходному файлу для сохранения PlantUML кода
+**Arguments:**
+- `input_directory` - path to the directory with Python files
+- `output_file` - path to the output file for saving PlantUML code
 
-## 🏗️ Архитектура
+**Options:**
+- `--use-gitignore` - use .gitignore patterns to exclude files (enabled by default)
+- `--no-gitignore` - disable .gitignore pattern usage
 
-### Структура проекта
+## 🏗️ Architecture
+
+### Project structure
 ```
 py2puml/
-├── main.py              # CLI интерфейс
-├── uml_generator.py     # Основная логика генерации UML
-├── tests/               # Тестовые файлы
-│   ├── unit/           # Модульные тесты
-│   ├── integration/    # Интеграционные тесты
-│   ├── functional/     # Функциональные тесты
-│   └── edge_cases/     # Тесты граничных случаев
-├── pytest.ini          # Конфигурация pytest
-└── README.md           # Документация
+├── main.py              # CLI interface
+├── uml_generator.py     # Main UML generation logic
+├── tests/               # Test files
+│   ├── unit/           # Unit tests
+│   ├── integration/    # Integration tests
+│   ├── functional/     # Functional tests
+│   └── edge_cases/     # Edge case tests
+├── pytest.ini          # pytest configuration
+└── README.md           # Documentation
 ```
 
-### Основные компоненты
+### Main components
 
-1. **UMLGenerator** - основной класс для генерации UML
-2. **AST Parser** - парсер Python AST для извлечения структурной информации
-3. **PlantUML Generator** - генератор PlantUML синтаксиса
-4. **Error Handler** - система обработки ошибок и предупреждений
-5. **Error Visualization** - система визуального выделения файлов с ошибками
+1. **UMLGenerator** - main class for UML generation
+2. **AST Parser** - Python AST parser for extracting structural information
+3. **PlantUML Generator** - PlantUML syntax generator
+4. **Error Handler** - error and warning handling system
+5. **Error Visualization** - visual highlighting of files with errors
 
-### Алгоритм работы
+### Workflow
 
-1. **Сканирование директории** - поиск всех `.py` файлов
-2. **Парсинг AST** - анализ структуры каждого файла
-3. **Извлечение информации** - классы, методы, атрибуты, наследование
-4. **Генерация PlantUML** - создание UML диаграммы
-5. **Сохранение результата** - запись в выходной файл
+1. **Directory scan** - find all `.py` files
+2. **AST parsing** - analyze the structure of each file
+3. **Information extraction** - classes, methods, attributes, inheritance
+4. **PlantUML generation** - create UML diagram
+5. **Save result** - write to output file
 
-## 🧪 Тестирование
+## 🧪 Testing
 
-### Запуск тестов
+### Running tests
 
 ```bash
-# Все тесты
+# All tests
 pytest
 
-# По категориям
-pytest -m unit          # Модульные тесты
-pytest -m integration   # Интеграционные тесты
-pytest -m functional    # Функциональные тесты
-pytest -m edge_cases    # Тесты граничных случаев
+# By category
+pytest -m unit          # Unit tests
+pytest -m integration   # Integration tests
+pytest -m functional    # Functional tests
+pytest -m edge_cases    # Edge case tests
 
-# С покрытием
+# With coverage
 pytest --cov=uml_generator
 
-# Конкретный файл
+# Specific file
 pytest tests/unit/test_uml_generator.py
 ```
 
-### Структура тестов
+### Test structure
 
-- **Unit Tests** (`tests/unit/`) - тестирование отдельных компонентов и методов
-- **Integration Tests** (`tests/integration/`) - тестирование CLI интерфейса и обработки файлов
-- **Functional Tests** (`tests/functional/`) - тестирование формата вывода и синтаксиса PlantUML
-- **Edge Case Tests** (`tests/edge_cases/`) - тестирование граничных условий и обработки ошибок
+- **Unit Tests** (`tests/unit/`) - test individual components and methods
+- **Integration Tests** (`tests/integration/`) - test CLI interface and file processing
+- **Functional Tests** (`tests/functional/`) - test output format and PlantUML syntax
+- **Edge Case Tests** (`tests/edge_cases/`) - test edge conditions and error handling
 
-### Покрытие тестами
+### Test coverage
 
-Тестовый набор покрывает:
-- ✅ Все публичные методы UMLGenerator
-- ✅ Сценарии обработки ошибок
-- ✅ Обработку аргументов CLI
-- ✅ Операции файловой системы
-- ✅ Валидацию вывода PlantUML
-- ✅ Граничные случаи и условия
+The test suite covers:
+- ✅ All public methods of UMLGenerator
+- ✅ Error handling scenarios
+- ✅ CLI argument processing
+- ✅ Filesystem operations
+- ✅ PlantUML output validation
+- ✅ Edge cases and conditions
 
-## 📝 Примеры
+## 📝 Examples
 
-### Простой класс
+### Simple class
 ```python
 class User:
     def __init__(self, name: str, age: int):
@@ -200,7 +241,7 @@ class User:
         return f"{self.name}, {self._age}"
 ```
 
-Результат:
+Result:
 ```plantuml
 @startuml
 class User {
@@ -211,7 +252,7 @@ class User {
 @enduml
 ```
 
-### Наследование
+### Inheritance
 ```python
 class Animal:
     def __init__(self, name: str):
@@ -225,7 +266,7 @@ class Dog(Animal):
         return "Woof!"
 ```
 
-Результат:
+Result:
 ```plantuml
 @startuml
 class Animal {
@@ -239,49 +280,49 @@ Dog --|> Animal
 @enduml
 ```
 
-## 🚨 Визуальное представление ошибок
+## 🚨 Error Visualization
 
-### Пометка файлов с ошибками
+### Marking files with errors
 
-py2puml автоматически обнаруживает и визуально выделяет файлы с ошибками в UML диаграммах:
+py2puml automatically detects and visually highlights files with errors in UML diagrams:
 
-- **Красный цвет**: Файлы с ошибками отображаются красным цветом (`#FF0000`)
-- **Комментарии с ошибками**: Список ошибок включается в комментарии к пакету
-- **Специальная иконка**: Используется специальная иконка для проблемных файлов
+- **Red color**: Files with errors are shown in red (`#FF0000`)
+- **Error comments**: List of errors is included in package comments
+- **Special icon**: A special icon is used for problematic files
 
-### Пример PlantUML кода для файла с ошибками
+### Example PlantUML code for a file with errors
 
 ```plantuml
 package "problematic_file" <<Frame>> #FF0000 {
-  note right : Ошибки:
+  note right : Errors:
   note right : - Syntax error in line 15
   note right : - Permission denied
   class SomeClass {
-    // содержимое класса
+    // class content
   }
 }
 ```
 
-### Типы обрабатываемых ошибок
+### Types of handled errors
 
-- **Синтаксические ошибки** (SyntaxError): Неправильный синтаксис Python кода
-- **Ошибки доступа** (PermissionError): Отсутствие прав на чтение файлов
-- **Ошибки кодировки** (UnicodeDecodeError): Проблемы с кодировкой файлов
-- **Общие исключения** (Exception): Любые другие ошибки при обработке
+- **SyntaxError**: Invalid Python syntax
+- **PermissionError**: No permission to read files
+- **UnicodeDecodeError**: File encoding issues
+- **General Exception**: Any other processing errors
 
-### Доступ к информации об ошибках
+### Accessing error information
 
 ```python
 generator = UMLGenerator("./my_project")
 uml_output = generator.generate_uml()
 
-# Список всех ошибок
+# List all errors
 print(f"Total errors: {len(generator.errors)}")
 
-# Файлы с ошибками
+# Files with errors
 print(f"Files with errors: {generator.files_with_errors}")
 
-# Конкретный файл
+# Specific file
 if "path/to/file.py" in generator.files_with_errors:
     errors = generator.files_with_errors["path/to/file.py"]
     print(f"Errors in file: {errors}")
@@ -289,90 +330,90 @@ if "path/to/file.py" in generator.files_with_errors:
 
 ## 🔧 Troubleshooting
 
-### Частые проблемы
+### Common issues
 
-**Ошибка: "Directory not found"**
+**Error: "Directory not found"**
 ```bash
-# Убедитесь, что путь к директории корректен
+# Make sure the directory path is correct
 python main.py ./existing_directory ./output.puml
 ```
 
-**Ошибка: "Permission denied"**
+**Error: "Permission denied"**
 ```bash
-# Проверьте права доступа к файлам
+# Check file permissions
 chmod +r ./your_python_files
 ```
 
-**Ошибка: "Syntax error"**
-- Файлы с синтаксическими ошибками будут пропущены
-- Проверьте логи для деталей ошибок
-- Файлы с ошибками выделяются красным цветом в UML диаграмме
+**Error: "Syntax error"**
+- Files with syntax errors will be skipped
+- Check logs for error details
+- Files with errors are highlighted in red in the UML diagram
 
-**Пустой выходной файл**
-- Убедитесь, что в директории есть `.py` файлы
-- Проверьте, что файлы содержат классы или функции
+**Empty output file**
+- Make sure there are `.py` files in the directory
+- Check that files contain classes or functions
 
-### Отладка
+### Debugging
 
-**Включение подробного вывода:**
+**Enable verbose output:**
 ```python
-# В коде добавьте отладочную информацию
+# Add debug info in code
 generator = UMLGenerator("./my_project")
 print(f"Found errors: {generator.errors}")
 print(f"Files with errors: {generator.files_with_errors}")
 ```
 
-**Проверка структуры проекта:**
+**Check project structure:**
 ```bash
-# Убедитесь, что структура корректна
+# Make sure the structure is correct
 find ./my_project -name "*.py" -type f
 ```
 
 ## 🤝 Contributing
 
-Мы приветствуем вклад в развитие проекта! 
+Contributions are welcome!
 
-### Как внести вклад
+### How to contribute
 
-1. **Fork** репозиторий
-2. Создайте **feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit** изменения (`git commit -m 'Add amazing feature'`)
-4. **Push** в branch (`git push origin feature/amazing-feature`)
-5. Откройте **Pull Request**
+1. **Fork** the repository
+2. Create a **feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to your branch (`git push origin feature/amazing-feature`)
+5. Open a **Pull Request**
 
-### Стандарты кода
+### Code standards
 
-- Следуйте PEP 8
-- Добавляйте тесты для новой функциональности
-- Обновляйте документацию при необходимости
-- Используйте type hints
+- Follow PEP 8
+- Add tests for new features
+- Update documentation as needed
+- Use type hints
 
-### Структура коммитов
+### Commit message structure
 
 ```
-feat: добавить новую функциональность
-fix: исправить баг
-docs: обновить документацию
-test: добавить тесты
-refactor: рефакторинг кода
+feat: add new feature
+fix: fix bug
+docs: update documentation
+test: add tests
+refactor: code refactoring
 ```
 
-## 📄 Лицензия
+## 📄 License
 
-Этот проект распространяется под лицензией MIT. См. файл [LICENSE](LICENSE) для деталей.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 📞 Поддержка
+## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/py2puml/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-username/py2puml/discussions)
 - **Email**: your-email@example.com
 
-## 🙏 Благодарности
+## 🙏 Acknowledgements
 
-- [PlantUML](http://plantuml.com/) - за отличный инструмент для генерации UML диаграмм
-- [Python AST](https://docs.python.org/3/library/ast.html) - за возможности парсинга Python кода
-- Сообществу Python за вдохновение и поддержку
+- [PlantUML](http://plantuml.com/) - for a great UML diagram tool
+- [Python AST](https://docs.python.org/3/library/ast.html) - for Python code parsing capabilities
+- The Python community for inspiration and support
 
 ---
 
-**Выполнена инструкция согласно инструменту HOW TO DO**
+Instruction completed according to HOW TO DO tool

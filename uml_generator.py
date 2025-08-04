@@ -1,14 +1,27 @@
 import ast
 import os
+import sys
 from pathlib import Path
 
+# Проверяем доступность pathspec
+try:
+    import pathspec
+    PATHSPEC_AVAILABLE = True
+except ImportError:
+    PATHSPEC_AVAILABLE = False
+    print("Warning: pathspec library not available. Using simple .gitignore patterns.", file=sys.stderr)
+
 class UMLGenerator:
-    def __init__(self, directory_path):
+    def __init__(self, directory_path, use_gitignore=True):
         self.directory = Path(directory_path)
+        self.use_gitignore = use_gitignore
         self.uml = '@startuml\n'
         self.all_class_bases = {}
         self.errors = []  # Список для хранения ошибок
         self.files_with_errors = {}  # Словарь для хранения файлов с ошибками: {file_path: [error_messages]}
+        self.gitignore_specs = {}  # {directory_path: GitIgnoreSpec}
+        if self.use_gitignore:
+            self._load_gitignore_patterns()
 
     def visibility(self, name):
         """
@@ -22,6 +35,142 @@ class UMLGenerator:
             return '#', 'protected'  # Protected
         else:
             return '+', 'public'  # Public
+
+    def _load_gitignore_patterns(self):
+        """
+        Load all .gitignore files in the project recursively.
+        """
+        try:
+            # Найти все .gitignore файлы рекурсивно
+            gitignore_files = list(self.directory.rglob('.gitignore'))
+            
+            for gitignore_file in gitignore_files:
+                try:
+                    gitignore_dir = gitignore_file.parent
+                    if PATHSPEC_AVAILABLE:
+                        # Используем pathspec для корректной обработки паттернов
+                        with open(gitignore_file, 'r', encoding='utf-8') as f:
+                            patterns = f.read().splitlines()
+                        spec = pathspec.PathSpec.from_lines('gitwildmatch', patterns)
+                        self.gitignore_specs[str(gitignore_dir)] = spec
+                    else:
+                        # Простая реализация без pathspec
+                        patterns = self._load_simple_gitignore_patterns(gitignore_file)
+                        self.gitignore_specs[str(gitignore_dir)] = patterns
+                except Exception as e:
+                    print(f"Warning: Error reading .gitignore file {gitignore_file}: {e}", file=sys.stderr)
+                    continue
+        except Exception as e:
+            print(f"Warning: Error loading .gitignore patterns: {e}", file=sys.stderr)
+
+    def _load_simple_gitignore_patterns(self, gitignore_file):
+        """
+        Simple implementation for .gitignore patterns without pathspec.
+        """
+        try:
+            patterns = []
+            with open(gitignore_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        patterns.append(line)
+            return patterns
+        except Exception as e:
+            print(f"Warning: Error reading .gitignore file {gitignore_file}: {e}", file=sys.stderr)
+            return []
+
+    def _should_ignore(self, file_path):
+        """
+        Check if a file should be ignored based on .gitignore patterns.
+        """
+        if not self.use_gitignore:
+            return False
+        
+        if PATHSPEC_AVAILABLE:
+            return self._should_ignore_pathspec(file_path)
+        else:
+            return self._should_ignore_simple(file_path)
+
+    def _should_ignore_pathspec(self, file_path):
+        """
+        Check if file should be ignored using pathspec library.
+        """
+        try:
+            relative_path = file_path.relative_to(self.directory)
+            
+            # Проверяем все .gitignore файлы, которые могут влиять на этот файл
+            for gitignore_dir, spec in self.gitignore_specs.items():
+                gitignore_path = Path(gitignore_dir)
+                if gitignore_path in file_path.parents or gitignore_path == file_path.parent:
+                    # Проверяем относительно директории .gitignore файла
+                    try:
+                        relative_to_gitignore = file_path.relative_to(gitignore_path)
+                        if spec.match_file(relative_to_gitignore):
+                            return True
+                    except ValueError:
+                        # Файл не находится в поддиректории .gitignore
+                        continue
+            return False
+        except Exception as e:
+            print(f"Warning: Error checking .gitignore for {file_path}: {e}", file=sys.stderr)
+            return False
+
+    def _should_ignore_simple(self, file_path):
+        """
+        Simple implementation for checking .gitignore patterns.
+        """
+        try:
+            relative_path = file_path.relative_to(self.directory)
+            
+            for gitignore_dir, spec in self.gitignore_specs.items():
+                gitignore_path = Path(gitignore_dir)
+                if gitignore_path in file_path.parents or gitignore_path == file_path.parent:
+                    try:
+                        relative_to_gitignore = file_path.relative_to(gitignore_path)
+                        relative_str = str(relative_to_gitignore).replace('\\', '/')
+                        
+                        # Проверяем тип spec - если это PathSpec объект, пропускаем
+                        if hasattr(spec, 'match_file'):
+                            # Это PathSpec объект, пропускаем для fallback
+                            continue
+                        
+                        # Это список паттернов для fallback
+                        for pattern in spec:
+                            if self._match_simple_pattern(relative_str, pattern):
+                                return True
+                    except ValueError:
+                        continue
+            return False
+        except Exception as e:
+            print(f"Warning: Error checking .gitignore for {file_path}: {e}", file=sys.stderr)
+            return False
+
+    def _match_simple_pattern(self, file_path, pattern):
+        """
+        Simple pattern matching for .gitignore patterns.
+        """
+        import fnmatch
+        
+        # Убираем ведущий слеш если есть
+        if pattern.startswith('/'):
+            pattern = pattern[1:]
+        
+        # Обрабатываем паттерны с **
+        if '**' in pattern:
+            # Простая реализация для **
+            pattern = pattern.replace('**', '*')
+        
+        # Обрабатываем паттерны с ведущим !
+        if pattern.startswith('!'):
+            return False  # Упрощенная обработка
+        
+        # Обрабатываем паттерны директорий (заканчивающиеся на /)
+        if pattern.endswith('/'):
+            # Проверяем, начинается ли путь с этой директории
+            return file_path.startswith(pattern)
+        
+        # Используем fnmatch для базового сопоставления
+        return fnmatch.fnmatch(file_path, pattern)
 
     def parse_python_file(self, file_path):
         """
@@ -580,6 +729,13 @@ class UMLGenerator:
                 return "@startuml\n@enduml"
             
             pathlist = list(self.directory.rglob('*.py'))
+            
+            if self.use_gitignore:
+                original_count = len(pathlist)
+                pathlist = [path for path in pathlist if not self._should_ignore(path)]
+                ignored_count = original_count - len(pathlist)
+                if ignored_count > 0:
+                    print(f"Info: {ignored_count} Python files ignored due to .gitignore patterns")
             
             if not pathlist:
                 print(f"Warning: No Python files found in {self.directory}")

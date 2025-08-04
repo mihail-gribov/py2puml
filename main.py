@@ -8,6 +8,14 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(description='Generate UML from Python source code.')
         parser.add_argument('directory_path', type=str, help='Path to the directory containing Python source files.')
         parser.add_argument('output_file_path', type=str, help='Path to the output file where UML will be saved.')
+        parser.add_argument('--use-gitignore', 
+                           action='store_true', 
+                           default=True,
+                           help='Use .gitignore patterns to exclude files (default: True)')
+        parser.add_argument('--no-gitignore', 
+                           dest='use_gitignore',
+                           action='store_false',
+                           help='Do not use .gitignore patterns')
 
         args = parser.parse_args()
 
@@ -37,7 +45,7 @@ if __name__ == "__main__":
 
         # Создаем UML генератор
         try:
-            uml_generator = UMLGenerator(args.directory_path)
+            uml_generator = UMLGenerator(args.directory_path, use_gitignore=args.use_gitignore)
         except Exception as e:
             print(f"Error: Failed to initialize UML generator: {e}")
             sys.exit(1)

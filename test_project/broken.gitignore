@@ -1,0 +1,4 @@
+# This is a broken .gitignore file
+tests/
+*.pyc
+__pycache__/ 

@@ -1,0 +1,11 @@
+# Ignore test files
+tests/
+*_test.py
+
+# Ignore generated files
+*.pyc
+__pycache__/
+
+# Ignore virtual environments
+venv/
+.venv/ 
