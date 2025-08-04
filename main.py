@@ -6,8 +6,13 @@ from uml_generator import UMLGenerator
 if __name__ == "__main__":
     try:
         parser = argparse.ArgumentParser(description='Generate UML from Python source code.')
-        parser.add_argument('directory_path', type=str, help='Path to the directory containing Python source files.')
-        parser.add_argument('output_file_path', type=str, help='Path to the output file where UML will be saved.')
+        
+        # Создаем группу для взаимоисключающих аргументов
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('directory_path', type=str, nargs='?', help='Path to the directory containing Python source files.')
+        group.add_argument('--describe-file', type=str, help='Path to a single Python file to describe.')
+        
+        parser.add_argument('output_file_path', type=str, nargs='?', help='Path to the output file where UML will be saved.')
         parser.add_argument('--use-gitignore', 
                            action='store_true', 
                            default=True,
@@ -16,9 +21,54 @@ if __name__ == "__main__":
                            dest='use_gitignore',
                            action='store_false',
                            help='Do not use .gitignore patterns')
+        
+        # Новые аргументы для describe-file
+        parser.add_argument('--format', 
+                           choices=['text', 'json', 'yaml'],
+                           default='text',
+                           help='Output format for describe-file command (default: text)')
+        parser.add_argument('--no-docs',
+                           action='store_true',
+                           help='Exclude documentation from describe-file output')
 
         args = parser.parse_args()
 
+        # Обработка команды describe-file
+        if args.describe_file:
+            file_path = Path(args.describe_file)
+            if not file_path.exists():
+                print(f"Error: File not found: {file_path}")
+                sys.exit(1)
+            
+            if not file_path.is_file():
+                print(f"Error: Path is not a file: {file_path}")
+                sys.exit(1)
+            
+            # Создаем UML генератор для одного файла
+            try:
+                uml_generator = UMLGenerator(file_path.parent, use_gitignore=False)
+            except Exception as e:
+                print(f"Error: Failed to initialize UML generator: {e}")
+                sys.exit(1)
+            
+            # Описываем файл
+            try:
+                include_docs = not args.no_docs
+                result = uml_generator.describe_file(file_path, format=args.format, include_docs=include_docs)
+                print(result)
+            except Exception as e:
+                print(f"Error: Failed to describe file: {e}")
+                sys.exit(1)
+            
+            # Выводим предупреждения, если есть ошибки
+            if uml_generator.errors:
+                print(f"\nWarning: {len(uml_generator.errors)} errors occurred during processing:")
+                for error in uml_generator.errors:
+                    print(f"  - {error}")
+            
+            sys.exit(0)
+
+        # Обработка основной команды UML генерации
         # Проверяем существование входной директории
         input_dir = Path(args.directory_path)
         if not input_dir.exists():

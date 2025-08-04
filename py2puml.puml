@@ -1,0 +1,208 @@
+@startuml
+package "uml_generator" <<Frame>> #F0F0FF {
+  class UMLGenerator {
+    + all_class_bases
+    + directory
+    + errors
+    + files_with_errors
+    + gitignore_specs
+    + uml
+    + use_gitignore
+    ....
+    ~ __init__(directory_path, use_gitignore)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _parse_file_partially(content, file_path)
+    # _process_ast_node(node, classes, functions, global_vars, class_bases, file_path)
+    # _should_ignore(file_path)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + add_inheritance_relations()
+    + determine_class_type(has_fields, abstract_method_count, total_method_count, bases)
+    + extract_fields_from_init(init_method)
+    + format_class_info(class_info)
+    + generate_uml()
+    + get_type_annotation(annotation)
+    + parse_python_file(file_path)
+    + process_attributes(body_item)
+    + process_class_def(node)
+    + process_fields(body_item)
+    + process_function_def(node)
+    + process_global_vars(node)
+    + process_method_def(body_item)
+    + visibility(name)
+  }
+}
+package "main" <<Frame>> #F0F0FF {
+}
+package "tests.conftest" <<Frame>> #F0F0FF {
+  class "temp_directory()" << (F,#DDDD00) >> {
+  }
+  class "sample_python_file(temp_directory)" << (F,#DDDD00) >> {
+  }
+  class "complex_python_file(temp_directory)" << (F,#DDDD00) >> {
+  }
+  class "broken_python_file(temp_directory)" << (F,#DDDD00) >> {
+  }
+  class "empty_directory(temp_directory)" << (F,#DDDD00) >> {
+  }
+  class "project_structure(temp_directory)" << (F,#DDDD00) >> {
+  }
+}
+package "tests.__init__" <<Frame>> #F0F0FF {
+}
+package "test_project.src.main" <<Frame>> #F0F0FF {
+  class User {
+    + name
+    ....
+    ~ __init__(name)
+    + get_name()
+  }
+}
+package "tests.functional.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.functional.test_output_format" <<Frame>> #F0F0FF {
+  class TestOutputFormat {
+    + setup_method()
+    + teardown_method()
+    + test_abstract_classes_and_interfaces()
+    + test_class_visibility_representation()
+    + test_complex_type_annotations()
+    + test_empty_project_output()
+    + test_error_handling_in_output()
+    + test_global_variables_and_functions()
+    + test_inheritance_relationships()
+    + test_large_project_structure()
+    + test_method_parameters()
+    + test_package_structure()
+    + test_plantuml_syntax_completeness()
+    + test_plantuml_syntax_validity()
+    + test_static_methods_and_attributes()
+  }
+}
+package "tests.edge_cases.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.edge_cases.test_edge_cases" <<Frame>> #F0F0FF {
+  class TestEdgeCases {
+    + setup_method()
+    + teardown_method()
+    + test_comments_and_docstrings()
+    + test_complex_ast_structures()
+    + test_decorators()
+    + test_empty_classes()
+    + test_empty_directory()
+    + test_files_with_only_global_variables()
+    + test_files_without_classes()
+    + test_imports_and_from_imports()
+    + test_nested_packages()
+    + test_paths_with_special_characters()
+    + test_special_characters_in_names()
+    + test_symlinks_and_cyclic_references()
+    + test_try_except_blocks()
+    + test_unicode_characters()
+    + test_very_large_files()
+    + test_very_long_names()
+  }
+}
+package "tests.unit.test_uml_generator" <<Frame>> #F0F0FF {
+  class TestUMLGenerator {
+    + setup_method()
+    + teardown_method()
+    + test_determine_class_type_abstract()
+    + test_determine_class_type_interface()
+    + test_determine_class_type_regular()
+    + test_extract_fields_from_init()
+    + test_files_with_errors_backward_compatibility()
+    + test_files_with_errors_empty_after_clean_parse()
+    + test_files_with_errors_encoding_error()
+    + test_files_with_errors_initialization()
+    + test_files_with_errors_multiple_errors()
+    + test_files_with_errors_permission_error()
+    + test_files_with_errors_syntax_error()
+    + test_format_class_info()
+    + test_generate_uml_error_files_visual_representation()
+    + test_generate_uml_with_error_files()
+    + test_get_type_annotation_complex()
+    + test_get_type_annotation_simple()
+    + test_parse_python_file_nonexistent()
+    + test_parse_python_file_syntax_error()
+    + test_parse_python_file_valid()
+    + test_process_class_def_abstract()
+    + test_process_class_def_simple()
+    + test_process_function_def()
+    + test_process_global_vars()
+    + test_process_method_def_simple()
+    + test_process_method_def_static()
+    + test_visibility_magic()
+    + test_visibility_private()
+    + test_visibility_protected()
+    + test_visibility_public()
+  }
+}
+package "tests.unit.test_gitignore_functionality" <<Frame>> #F0F0FF {
+  class TestGitignoreFunctionality {
+    + setup_method()
+    + teardown_method()
+    + test_gitignore_disabled()
+    + test_gitignore_file_corrupted()
+    + test_gitignore_file_encoding_error()
+    + test_gitignore_file_permission_error()
+    + test_load_gitignore_patterns_empty_file()
+    + test_load_gitignore_patterns_multiple_files()
+    + test_load_gitignore_patterns_nonexistent()
+    + test_load_gitignore_patterns_success()
+    + test_load_gitignore_patterns_with_comments()
+    + test_pathspec_import_error()
+    + test_should_ignore_nested_patterns()
+    + test_should_ignore_pattern_matching()
+    + test_should_ignore_relative_paths()
+    + test_should_ignore_with_pathspec()
+    + test_should_ignore_without_pathspec()
+  }
+}
+package "tests.unit.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.integration.test_gitignore_cli" <<Frame>> #F0F0FF {
+  class TestGitignoreCLI {
+    + setup_method()
+    + teardown_method()
+    + test_cli_gitignore_help_text()
+    + test_cli_gitignore_mutually_exclusive()
+    + test_cli_no_gitignore_file()
+    + test_cli_no_gitignore_flag()
+    + test_cli_use_gitignore_default()
+    + test_cli_use_gitignore_flag()
+    + test_generate_uml_ignored_files_count()
+    + test_generate_uml_output_consistency()
+    + test_generate_uml_with_gitignore()
+    + test_generate_uml_without_gitignore()
+  }
+}
+package "tests.integration.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.integration.test_cli" <<Frame>> #F0F0FF {
+  class TestCLI {
+    + setup_method()
+    + teardown_method()
+    + test_cli_complex_project()
+    + test_cli_empty_directory()
+    + test_cli_file_as_directory()
+    + test_cli_inheritance_relationships()
+    + test_cli_keyboard_interrupt(mock_input)
+    + test_cli_missing_arguments()
+    + test_cli_nonexistent_directory()
+    + test_cli_permission_denied_output()
+    + test_cli_syntax_errors_in_code()
+    + test_cli_valid_arguments()
+  }
+}
+package "test_no_gitignore.src.example" <<Frame>> #F0F0FF {
+  class Example {
+    + value
+    ....
+    ~ __init__()
+    + get_value()
+  }
+}
+@enduml

@@ -10,6 +10,9 @@
 
 - **Comprehensive Python code analysis**: Parses classes, methods, attributes, and global variables
 - **PlantUML diagram generation**: Automatically creates UML diagrams in standard format
+- **File description feature**: Analyze and describe individual Python files with detailed output
+- **Multiple output formats**: Support for text, JSON, and YAML output formats
+- **Documentation extraction**: Extract and display docstrings from classes, methods, and functions
 - **Inheritance support**: Correctly displays class hierarchies
 - **Visibility management**: Distinguishes public, protected, and private class members
 - **Robust error handling**: Handles invalid code and filesystem issues gracefully
@@ -56,6 +59,33 @@ pip install -r requirements.txt
 ### Basic usage
 ```bash
 python main.py ./my_python_project ./output/uml_diagram.puml
+```
+
+### File description feature
+
+**Describe a single Python file:**
+```bash
+python main.py --describe-file ./src/models.py
+```
+
+**Describe with JSON output:**
+```bash
+python main.py --describe-file ./src/models.py --format json
+```
+
+**Describe with YAML output:**
+```bash
+python main.py --describe-file ./src/models.py --format yaml
+```
+
+**Describe without documentation:**
+```bash
+python main.py --describe-file ./src/models.py --no-docs
+```
+
+**Combine options:**
+```bash
+python main.py --describe-file ./src/models.py --format json --no-docs
 ```
 
 ### Usage examples
@@ -117,7 +147,123 @@ venv/
 
 The tool automatically finds all `.gitignore` files in the project and applies their patterns relative to each file's location, just like Git does.
 
-## 📖 API Documentation
+## 📝 File Description Feature
+
+The `--describe-file` command provides detailed analysis of individual Python files, extracting classes, functions, variables, and their documentation.
+
+### Output Formats
+
+**Text format (default):**
+```
+File: example.py
+Summary: 45 lines, 3 classes, 2 functions, 3 variables
+
+Classes:
+  UserAuthenticator (abstract class)
+    Bases: ABC
+    Documentation: Abstract base class for user authentication.
+    Methods:
+      + __init__(self, config: Dict[str, str])
+        Documentation: Initialize authenticator with configuration.
+      + {abstract} authenticate(self, username: str, password: str) -> bool
+        Documentation: Authenticate user credentials.
+
+Functions:
+  + create_user(username: str, email: str) -> User
+    Documentation: Create a new user instance.
+
+Variables:
+  + API_VERSION: str
+  + DEFAULT_TIMEOUT: int
+```
+
+**JSON format:**
+```json
+{
+  "file": "example.py",
+  "summary": {
+    "lines": 45,
+    "classes": 3,
+    "functions": 2,
+    "variables": 3
+  },
+  "classes": [
+    {
+      "name": "UserAuthenticator",
+      "type": "abstract class",
+      "bases": ["ABC"],
+      "documentation": "Abstract base class for user authentication.",
+      "fields": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "visibility": "public",
+          "signature": "__init__(self, config: Dict[str, str])",
+          "return_type": null,
+          "documentation": "Initialize authenticator with configuration."
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "create_user",
+      "signature": "create_user(username: str, email: str)",
+      "return_type": "User",
+      "documentation": "Create a new user instance."
+    }
+  ],
+  "variables": [
+    {
+      "name": "API_VERSION",
+      "visibility": "public",
+      "type": "str",
+      "documentation": null
+    }
+  ]
+}
+```
+
+**YAML format:**
+```yaml
+file: example.py
+summary:
+  lines: 45
+  classes: 3
+  functions: 2
+  variables: 3
+classes:
+  - name: UserAuthenticator
+    type: abstract class
+    bases: [ABC]
+    documentation: Abstract base class for user authentication.
+    fields: []
+    methods:
+      - name: __init__
+        visibility: public
+        signature: __init__(self, config: Dict[str, str])
+        return_type: null
+        documentation: Initialize authenticator with configuration.
+```
+
+### Supported Features
+
+- **Class analysis**: Extracts class names, bases, documentation, fields, and methods
+- **Function analysis**: Extracts function signatures, documentation, and return types
+- **Variable analysis**: Extracts global variables and their types
+- **Documentation extraction**: Extracts docstrings from classes, methods, and functions
+- **Visibility detection**: Identifies public, protected, and private members
+- **Async support**: Handles async functions and methods
+- **Type annotations**: Extracts type hints and annotations
+- **Error handling**: Gracefully handles syntax errors and missing files
+
+### Command Options
+
+- `--describe-file <file_path>` - Path to the Python file to analyze
+- `--format {text,json,yaml}` - Output format (default: text)
+- `--no-docs` - Exclude documentation from output
+
+## �� API Documentation
 
 ### UMLGenerator
 
@@ -134,6 +280,13 @@ UMLGenerator(directory_path: str)
 **generate_uml() -> str**
 Generates PlantUML code for all Python files in the directory.
 
+**describe_file(file_path: Path, format: str = 'text', include_docs: bool = True) -> str**
+Describes a single Python file with detailed analysis.
+- `file_path` - path to the Python file to analyze
+- `format` - output format: 'text', 'json', or 'yaml'
+- `include_docs` - whether to include documentation in output
+- Returns formatted string with file analysis
+
 **parse_python_file(file_path: Path) -> tuple**
 Parses a single Python file, returning a tuple with classes, functions, global variables, and base classes.
 
@@ -148,15 +301,22 @@ Determines the visibility of a class member by its name:
 
 ```bash
 python main.py <input_directory> <output_file> [options]
+# or
+python main.py --describe-file <file_path> [options]
 ```
 
 **Arguments:**
-- `input_directory` - path to the directory with Python files
-- `output_file` - path to the output file for saving PlantUML code
+- `input_directory` - path to the directory with Python files (for UML generation)
+- `output_file` - path to the output file for saving PlantUML code (for UML generation)
+- `--describe-file <file_path>` - path to a single Python file to describe
 
-**Options:**
+**Options for UML generation:**
 - `--use-gitignore` - use .gitignore patterns to exclude files (enabled by default)
 - `--no-gitignore` - disable .gitignore pattern usage
+
+**Options for file description:**
+- `--format {text,json,yaml}` - output format for describe-file command (default: text)
+- `--no-docs` - exclude documentation from describe-file output
 
 ## 🏗️ Architecture
 

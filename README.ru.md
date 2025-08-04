@@ -10,6 +10,9 @@
 
 - **Полный анализ Python кода**: Парсинг классов, методов, атрибутов и глобальных переменных
 - **Генерация PlantUML диаграмм**: Автоматическое создание UML диаграмм в стандартном формате
+- **Функция описания файлов**: Анализ и описание отдельных Python файлов с детальным выводом
+- **Множественные форматы вывода**: Поддержка текстового, JSON и YAML форматов вывода
+- **Извлечение документации**: Извлечение и отображение docstrings из классов, методов и функций
 - **Поддержка наследования**: Корректное отображение иерархии классов
 - **Управление видимостью**: Различение public, protected и private членов классов
 - **Обработка ошибок**: Робастная обработка некорректного кода и проблем файловой системы
@@ -59,6 +62,33 @@ pip install -r requirements.txt
 python main.py ./my_python_project ./output/uml_diagram.puml
 ```
 
+### Функция описания файлов
+
+**Опишите отдельный Python файл:**
+```bash
+python main.py --describe-file ./src/models.py
+```
+
+**Опишите с JSON выводом:**
+```bash
+python main.py --describe-file ./src/models.py --format json
+```
+
+**Опишите с YAML выводом:**
+```bash
+python main.py --describe-file ./src/models.py --format yaml
+```
+
+**Опишите без документации:**
+```bash
+python main.py --describe-file ./src/models.py --no-docs
+```
+
+**Комбинируйте опции:**
+```bash
+python main.py --describe-file ./src/models.py --format json --no-docs
+```
+
 ### Примеры использования
 
 **Анализ одного файла:**
@@ -80,43 +110,186 @@ python main.py ./my_project ./output/diagram.puml
 plantuml -tsvg ./output/diagram.puml
 ```
 
-### Gitignore Support
+### Поддержка .gitignore
 
-The tool supports `.gitignore` patterns to exclude files from UML generation:
+Инструмент поддерживает паттерны `.gitignore` для исключения файлов из генерации UML:
 
 ```bash
-# Use .gitignore patterns (default)
+# Использовать паттерны .gitignore (по умолчанию)
 python main.py ./my_project ./output/diagram.puml
 
-# Disable .gitignore patterns
+# Отключить паттерны .gitignore
 python main.py --no-gitignore ./my_project ./output/diagram.puml
 ```
 
-#### Examples
+#### Примеры
 
-**Basic .gitignore:**
+**Базовый .gitignore:**
 ```
 __pycache__/
 *.pyc
 venv/
 ```
 
-**Advanced .gitignore:**
+**Расширенный .gitignore:**
 ```
-# Ignore test files
+# Игнорировать тестовые файлы
 tests/
 *_test.py
 
-# Ignore generated files
+# Игнорировать сгенерированные файлы
 *.pyc
 __pycache__/
 
-# Ignore virtual environments
+# Игнорировать виртуальные окружения
 venv/
 .venv/
 ```
 
-The tool automatically finds all `.gitignore` files in the project and applies their patterns relative to each file's location, just like Git does.
+Инструмент автоматически находит все файлы `.gitignore` в проекте и применяет их паттерны относительно местоположения каждого файла, точно так же, как это делает Git.
+
+## 📝 Функция описания файлов
+
+Команда `--describe-file` предоставляет детальный анализ отдельных Python файлов, извлекая классы, функции, переменные и их документацию.
+
+### Форматы вывода
+
+**Текстовый формат (по умолчанию):**
+```
+File: example.py
+Summary: 45 lines, 3 classes, 2 functions, 3 variables
+
+Classes:
+  UserAuthenticator (abstract class)
+    Bases: ABC
+    Documentation: Abstract base class for user authentication.
+    Methods:
+      + __init__(self, config: Dict[str, str])
+        Documentation: Initialize authenticator with configuration.
+      + {abstract} authenticate(self, username: str, password: str) -> bool
+        Documentation: Authenticate user credentials.
+
+Functions:
+  + create_user(username: str, email: str) -> User
+    Documentation: Create a new user instance.
+
+Variables:
+  + API_VERSION: str
+  + DEFAULT_TIMEOUT: int
+```
+
+**JSON формат:**
+```json
+{
+  "file": "example.py",
+  "summary": {
+    "lines": 45,
+    "classes": 3,
+    "functions": 2,
+    "variables": 3
+  },
+  "classes": [
+    {
+      "name": "UserAuthenticator",
+      "type": "abstract class",
+      "bases": ["ABC"],
+      "documentation": "Abstract base class for user authentication.",
+      "fields": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "visibility": "public",
+          "signature": "__init__(self, config: Dict[str, str])",
+          "return_type": null,
+          "documentation": "Initialize authenticator with configuration."
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "create_user",
+      "signature": "create_user(username: str, email: str)",
+      "return_type": "User",
+      "documentation": "Create a new user instance."
+    }
+  ],
+  "variables": [
+    {
+      "name": "API_VERSION",
+      "visibility": "public",
+      "type": "str",
+      "documentation": null
+    }
+  ]
+}
+```
+
+**YAML формат:**
+```yaml
+file: example.py
+summary:
+  lines: 45
+  classes: 3
+  functions: 2
+  variables: 3
+classes:
+  - name: UserAuthenticator
+    type: abstract class
+    bases: [ABC]
+    documentation: Abstract base class for user authentication.
+    fields: []
+    methods:
+      - name: __init__
+        visibility: public
+        signature: __init__(self, config: Dict[str, str])
+        return_type: null
+        documentation: Initialize authenticator with configuration.
+```
+
+### Поддерживаемые возможности
+
+- **Анализ классов**: Извлекает имена классов, базовые классы, документацию, поля и методы
+- **Анализ функций**: Извлекает сигнатуры функций, документацию и типы возвращаемых значений
+- **Анализ переменных**: Извлекает глобальные переменные и их типы
+- **Извлечение документации**: Извлекает docstrings из классов, методов и функций
+- **Определение видимости**: Определяет public, protected и private члены
+- **Поддержка async**: Обрабатывает async функции и методы
+- **Аннотации типов**: Извлекает type hints и аннотации
+- **Обработка ошибок**: Корректно обрабатывает синтаксические ошибки и отсутствующие файлы
+
+### Опции команд
+
+- `--describe-file <file_path>` - Путь к Python файлу для анализа
+- `--format {text,json,yaml}` - Формат вывода (по умолчанию: text)
+- `--no-docs` - Исключить документацию из вывода
+
+### Примеры использования
+
+**Опишите отдельный Python файл:**
+```bash
+python main.py --describe-file ./src/models.py
+```
+
+**Опишите с JSON выводом:**
+```bash
+python main.py --describe-file ./src/models.py --format json
+```
+
+**Опишите с YAML выводом:**
+```bash
+python main.py --describe-file ./src/models.py --format yaml
+```
+
+**Опишите без документации:**
+```bash
+python main.py --describe-file ./src/models.py --no-docs
+```
+
+**Комбинируйте опции:**
+```bash
+python main.py --describe-file ./src/models.py --format json --no-docs
+```
 
 ## 📖 Документация API
 
@@ -135,6 +308,13 @@ UMLGenerator(directory_path: str)
 **generate_uml() -> str**
 Генерирует PlantUML код для всех Python файлов в директории.
 
+**describe_file(file_path: Path, format: str = 'text', include_docs: bool = True) -> str**
+Описывает отдельный Python файл с детальным анализом.
+- `file_path` - путь к Python файлу для анализа
+- `format` - формат вывода: 'text', 'json', или 'yaml'
+- `include_docs` - включать ли документацию в вывод
+- Возвращает отформатированную строку с анализом файла
+
 **parse_python_file(file_path: Path) -> tuple**
 Парсит отдельный Python файл, возвращая кортеж с классами, функциями, глобальными переменными и базовыми классами.
 
@@ -149,15 +329,22 @@ UMLGenerator(directory_path: str)
 
 ```bash
 python main.py <input_directory> <output_file> [options]
+# или
+python main.py --describe-file <file_path> [options]
 ```
 
 **Аргументы:**
-- `input_directory` - путь к директории с Python файлами
-- `output_file` - путь к выходному файлу для сохранения PlantUML кода
+- `input_directory` - путь к директории с Python файлами (для генерации UML)
+- `output_file` - путь к выходному файлу для сохранения PlantUML кода (для генерации UML)
+- `--describe-file <file_path>` - путь к отдельному Python файлу для описания
 
-**Опции:**
+**Опции для генерации UML:**
 - `--use-gitignore` - использовать .gitignore паттерны для исключения файлов (по умолчанию включено)
 - `--no-gitignore` - отключить использование .gitignore паттернов
+
+**Опции для описания файлов:**
+- `--format {text,json,yaml}` - формат вывода для команды describe-file (по умолчанию: text)
+- `--no-docs` - исключить документацию из вывода describe-file
 
 ## 🏗️ Архитектура
 

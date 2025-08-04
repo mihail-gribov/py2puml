@@ -262,6 +262,18 @@ class UMLGenerator:
                         print(f"Warning: {error_msg}")
                         continue
                         
+                elif isinstance(n, ast.AsyncFunctionDef):
+                    try:
+                        functions.append(self.process_function_def(n))
+                    except Exception as e:
+                        error_msg = f"Error processing async function in {file_path}: {e}"
+                        self.errors.append(error_msg)
+                        if str(file_path) not in self.files_with_errors:
+                            self.files_with_errors[str(file_path)] = []
+                        self.files_with_errors[str(file_path)].append(error_msg)
+                        print(f"Warning: {error_msg}")
+                        continue
+                        
                 elif isinstance(n, ast.Assign):
                     try:
                         global_vars.extend(self.process_global_vars(n))
@@ -507,6 +519,29 @@ class UMLGenerator:
                             fields = self.extract_fields_from_init(body_item)
                     except Exception as e:
                         # Пропускаем проблемные методы
+                        continue
+
+                elif isinstance(body_item, ast.AsyncFunctionDef):
+                    try:
+                        prefix, method_signature, is_abstract, is_static, is_class = self.process_method_def(body_item)
+                        if is_abstract:
+                            abstract_method_count += 1
+                        if is_static or is_class:
+                            static_methods.append((prefix, method_signature))
+                        else:
+                            methods.append((prefix, method_signature))
+                    except Exception as e:
+                        # Пропускаем проблемные методы
+                        continue
+
+                elif isinstance(body_item, ast.ClassDef):
+                    # Рекурсивно обрабатываем вложенные классы
+                    try:
+                        # Просто пропускаем вложенные классы для упрощения
+                        # В будущем можно добавить их отдельную обработку
+                        pass
+                    except Exception as e:
+                        # Пропускаем проблемные вложенные классы
                         continue
 
                 elif isinstance(body_item, ast.AnnAssign):
@@ -818,3 +853,261 @@ class UMLGenerator:
         except Exception as e:
             # Возвращаем пустой список в случае ошибки
             return []
+
+    def _extract_documentation(self, node):
+        """
+        Extract docstring from an AST node.
+        """
+        try:
+            if hasattr(node, 'body') and node.body:
+                # Ищем docstring в начале тела
+                first_item = node.body[0]
+                if isinstance(first_item, ast.Expr) and isinstance(first_item.value, ast.Constant):
+                    docstring = first_item.value.value
+                    if isinstance(docstring, str) and docstring.strip():
+                        return docstring.strip()
+            return None
+        except Exception:
+            return None
+
+    def _get_file_summary(self, file_path, classes, functions, variables):
+        """
+        Get file summary statistics.
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                lines = len(file.readlines())
+        except Exception:
+            lines = 0
+        
+        return {
+            'lines': lines,
+            'classes': len(classes),
+            'functions': len(functions),
+            'variables': len(variables)
+        }
+
+    def describe_file(self, file_path, format='text', include_docs=True):
+        """
+        Describe a Python file with classes, functions, and variables.
+        """
+        # Проверяем формат в начале
+        if format not in ['text', 'json', 'yaml']:
+            raise ValueError(f"Unsupported format: {format}")
+        
+        try:
+            # Конвертируем в Path объект если передана строка
+            if isinstance(file_path, str):
+                file_path = Path(file_path)
+            
+            # Проверяем существование файла
+            if not file_path.exists():
+                error_msg = f"File not found: {file_path}"
+                self.errors.append(error_msg)
+                return f"Error: {error_msg}"
+            
+            # Парсим файл используя существующий метод
+            classes, functions, global_vars, class_bases = self.parse_python_file(file_path)
+            
+            # Получаем статистику файла
+            summary = self._get_file_summary(file_path, classes, functions, global_vars)
+            
+            # Подготавливаем данные для форматирования
+            data = {
+                'file': str(file_path),
+                'summary': summary,
+                'classes': [],
+                'functions': [],
+                'variables': []
+            }
+            
+            # Обрабатываем классы
+            for class_info in classes:
+                class_name, fields, attributes, static_methods, methods, class_type, bases = class_info
+                
+                # Извлекаем документацию класса
+                class_doc = None
+                if include_docs:
+                    # Находим AST узел класса для извлечения документации
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            content = file.read()
+                        tree = ast.parse(content)
+                        for node in ast.walk(tree):
+                            if isinstance(node, ast.ClassDef) and node.name == class_name:
+                                class_doc = self._extract_documentation(node)
+                                break
+                    except Exception:
+                        pass
+                
+                class_data = {
+                    'name': class_name,
+                    'type': class_type,
+                    'bases': bases,
+                    'documentation': class_doc,
+                    'fields': [],
+                    'methods': []
+                }
+                
+                # Обрабатываем поля
+                for prefix, field in fields:
+                    field_data = {
+                        'name': field.split(':')[0].strip() if ':' in field else field,
+                        'visibility': 'public' if prefix.startswith('+') else 'private' if prefix.startswith('-') else 'protected',
+                        'type': field.split(':')[1].strip() if ':' in field else None
+                    }
+                    class_data['fields'].append(field_data)
+                
+                # Обрабатываем методы
+                for prefix, method in methods + static_methods:
+                    method_name = method.split('(')[0]
+                    method_data = {
+                        'name': method_name,
+                        'visibility': 'public' if prefix.startswith('+') else 'private' if prefix.startswith('-') else 'protected',
+                        'signature': method,
+                        'return_type': None,  # TODO: извлечь из аннотаций
+                        'documentation': None
+                    }
+                    
+                    # Извлекаем документацию метода
+                    if include_docs:
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as file:
+                                content = file.read()
+                            tree = ast.parse(content)
+                            for node in ast.walk(tree):
+                                if isinstance(node, ast.ClassDef) and node.name == class_name:
+                                    for body_item in node.body:
+                                        if isinstance(body_item, ast.FunctionDef) and body_item.name == method_name:
+                                            method_data['documentation'] = self._extract_documentation(body_item)
+                                            break
+                                        elif isinstance(body_item, ast.AsyncFunctionDef) and body_item.name == method_name:
+                                            method_data['documentation'] = self._extract_documentation(body_item)
+                                            break
+                                    break
+                        except Exception:
+                            pass
+                    
+                    class_data['methods'].append(method_data)
+                
+                data['classes'].append(class_data)
+            
+            # Обрабатываем функции
+            for func_signature in functions:
+                func_name = func_signature.split('(')[0]
+                func_data = {
+                    'name': func_name,
+                    'visibility': 'public',  # Функции всегда публичные
+                    'signature': func_signature,
+                    'return_type': None,  # TODO: извлечь из аннотаций
+                    'documentation': None
+                }
+                
+                # Извлекаем документацию функции
+                if include_docs:
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            content = file.read()
+                        tree = ast.parse(content)
+                        for node in ast.walk(tree):
+                            if isinstance(node, ast.FunctionDef) and node.name == func_name:
+                                func_data['documentation'] = self._extract_documentation(node)
+                                break
+                            elif isinstance(node, ast.AsyncFunctionDef) and node.name == func_name:
+                                func_data['documentation'] = self._extract_documentation(node)
+                                break
+                    except Exception:
+                        pass
+                
+                data['functions'].append(func_data)
+            
+            # Обрабатываем переменные
+            for prefix, var_name in global_vars:
+                var_data = {
+                    'name': var_name,
+                    'visibility': 'public' if prefix.startswith('+') else 'private' if prefix.startswith('-') else 'protected',
+                    'type': None,  # TODO: извлечь из аннотаций
+                    'documentation': None
+                }
+                data['variables'].append(var_data)
+            
+            # Форматируем результат
+            if format == 'text':
+                return self._format_describe_text(data)
+            elif format == 'json':
+                return self._format_describe_json(data)
+            elif format == 'yaml':
+                return self._format_describe_yaml(data)
+                
+        except Exception as e:
+            error_msg = f"Error describing file {file_path}: {e}"
+            self.errors.append(error_msg)
+            return f"Error: {error_msg}"
+
+    def _format_describe_text(self, data):
+        """
+        Format data in text format.
+        """
+        result = f"File: {data['file']}\n"
+        result += f"Summary: {data['summary']['lines']} lines, {data['summary']['classes']} classes, {data['summary']['functions']} functions, {data['summary']['variables']} variables\n\n"
+        
+        if data['classes']:
+            result += "Classes:\n"
+            for cls in data['classes']:
+                result += f"  {cls['name']} ({cls['type']})\n"
+                if cls['bases']:
+                    result += f"    Bases: {', '.join(cls['bases'])}\n"
+                if cls['documentation']:
+                    result += f"    Documentation: {cls['documentation']}\n"
+                
+                if cls['fields']:
+                    result += "    Fields:\n"
+                    for field in cls['fields']:
+                        visibility = field['visibility']
+                        field_type = f": {field['type']}" if field['type'] else ""
+                        result += f"      {visibility} {field['name']}{field_type}\n"
+                
+                if cls['methods']:
+                    result += "    Methods:\n"
+                    for method in cls['methods']:
+                        visibility = method['visibility']
+                        result += f"      {visibility} {method['signature']}\n"
+                        if method['documentation']:
+                            result += f"        Documentation: {method['documentation']}\n"
+                result += "\n"
+        
+        if data['functions']:
+            result += "Functions:\n"
+            for func in data['functions']:
+                result += f"  {func['signature']}\n"
+                if func['documentation']:
+                    result += f"    Documentation: {func['documentation']}\n"
+            result += "\n"
+        
+        if data['variables']:
+            result += "Variables:\n"
+            for var in data['variables']:
+                visibility = var['visibility']
+                var_type = f": {var['type']}" if var['type'] else ""
+                result += f"  {visibility} {var['name']}{var_type}\n"
+                if var['documentation']:
+                    result += f"    Documentation: {var['documentation']}\n"
+        
+        return result
+
+    def _format_describe_json(self, data):
+        """
+        Format data in JSON format.
+        """
+        import json
+        return json.dumps(data, indent=2, ensure_ascii=False)
+
+    def _format_describe_yaml(self, data):
+        """
+        Format data in YAML format.
+        """
+        try:
+            import yaml
+            return yaml.dump(data, default_flow_style=False, allow_unicode=True)
+        except ImportError:
+            return "Error: PyYAML library not available for YAML formatting"
