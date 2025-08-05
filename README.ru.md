@@ -71,7 +71,7 @@ py2puml describe ./src/models.py
 ```
 
 ### Различные способы запуска
-
+py
 **После установки (рекомендуется):**
 ```bash
 py2puml generate src/ output.puml

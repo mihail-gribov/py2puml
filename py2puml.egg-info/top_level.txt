@@ -1,4 +1,0 @@
-cli
-core
-tests
-utils
