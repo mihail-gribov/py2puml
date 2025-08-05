@@ -2,450 +2,445 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
+from unittest.mock import patch, mock_open
 
-# Добавляем путь к модулю для импорта
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-from uml_generator import UMLGenerator
+from py2puml.core.file_filter import FileFilter
+from py2puml.core.parser import PythonParser
+from py2puml.core.generator import UMLGenerator
+from py2puml.core.analyzer import FileAnalyzer
 
 
 class TestEdgeCases:
-    """Тесты граничных случаев"""
+    """Тесты для граничных случаев"""
 
     def setup_method(self):
         """Настройка перед каждым тестом"""
         self.temp_dir = tempfile.mkdtemp()
-        self.uml_generator = UMLGenerator(self.temp_dir)
+        self.file_filter = FileFilter(self.temp_dir)
+        self.generator = UMLGenerator(self.temp_dir, self.file_filter)
+        self.parser = PythonParser()
+        self.analyzer = FileAnalyzer(self.temp_dir)
 
     def teardown_method(self):
         """Очистка после каждого теста"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    def test_empty_directory(self):
-        """Тест пустой директории"""
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Должен вернуть минимальную валидную структуру
-        assert uml_output.startswith("@startuml")
-        assert uml_output.endswith("@enduml")
-        assert len(uml_output.split('\n')) == 2
+    def test_empty_file(self):
+        """Тест пустого файла"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write("")
+            file_path = Path(f.name)
 
-    def test_files_without_classes(self):
-        """Тест файлов без классов"""
-        test_file = Path(self.temp_dir) / "functions_only.py"
-        test_file.write_text("""
-def function1():
-    return "test1"
+        result = self.parser.parse_file(file_path)
+        assert result["classes"] == []
+        assert result["functions"] == []
+        assert result["global_vars"] == []
 
-def function2():
-    return "test2"
+    def test_file_with_only_comments(self):
+        """Тест файла только с комментариями"""
+        python_code = """
+# This is a comment
+# Another comment
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
 
-variable = "test"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем наличие функций
-        assert 'class "function1()"' in uml_output
-        assert 'class "function2()"' in uml_output
-        
-        # Проверяем наличие глобальных переменных
-        assert 'class "Global Variables"' in uml_output
-        assert "+ variable" in uml_output
+        result = self.parser.parse_file(file_path)
+        assert result["classes"] == []
+        assert result["functions"] == []
+        assert result["global_vars"] == []
 
-    def test_files_with_only_global_variables(self):
-        """Тест файлов только с глобальными переменными"""
-        test_file = Path(self.temp_dir) / "globals_only.py"
-        test_file.write_text("""
-CONSTANT = "value"
-variable = 42
-_protected_var = "protected"
-__private_var = "private"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем наличие глобальных переменных
-        assert 'class "Global Variables"' in uml_output
-        assert "+ CONSTANT" in uml_output
-        assert "+ variable" in uml_output
-        assert "# _protected_var" in uml_output
-        assert "- __private_var" in uml_output
+    def test_file_with_only_whitespace(self):
+        """Тест файла только с пробелами"""
+        python_code = """
+    
+    
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
 
-    def test_complex_ast_structures(self):
-        """Тест сложных AST структур"""
-        test_file = Path(self.temp_dir) / "complex.py"
-        test_file.write_text("""
-# Лямбда-функции
-lambda_func = lambda x: x * 2
+        result = self.parser.parse_file(file_path)
+        assert result["classes"] == []
+        assert result["functions"] == []
+        assert result["global_vars"] == []
 
-# Генераторы
-def generator_func():
-    for i in range(10):
-        yield i
+    def test_file_with_unicode_characters(self):
+        """Тест файла с Unicode символами"""
+        python_code = """
+class ТестКласс:
+    def метод(self):
+        return "тест"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
 
-# Вложенные классы
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+        assert result["classes"][0][0] == "ТестКласс"
+
+    def test_file_with_special_characters_in_names(self):
+        """Тест файла со специальными символами в именах"""
+        python_code = """
+class TestClass_123:
+    def method_with_underscores(self):
+        return "test"
+    
+    def method_with_dashes(self):
+        return "test"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+        assert result["classes"][0][0] == "TestClass_123"
+
+    def test_file_with_very_long_names(self):
+        """Тест файла с очень длинными именами"""
+        long_name = "A" * 1000
+        python_code = f"""
+class {long_name}:
+    def method(self):
+        return "test"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+        assert result["classes"][0][0] == long_name
+
+    def test_file_with_nested_classes(self):
+        """Тест файла с вложенными классами"""
+        python_code = """
 class OuterClass:
     class InnerClass:
-        def inner_method(self):
+        def method(self):
             return "inner"
     
     def outer_method(self):
         return "outer"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
 
-# Множественное наследование
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+        assert result["classes"][0][0] == "OuterClass"
+
+    def test_file_with_multiple_inheritance(self):
+        """Тест файла с множественным наследованием"""
+        python_code = """
 class Base1:
-    def method1(self):
-        return "base1"
+    pass
 
 class Base2:
-    def method2(self):
-        return "base2"
+    pass
 
-class MultiInherited(Base1, Base2):
-    def multi_method(self):
-        return "multi"
-
-# Декораторы классов
-def class_decorator(cls):
-    return cls
-
-@class_decorator
-class DecoratedClass:
-    def decorated_method(self):
-        return "decorated"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем основные классы
-        assert "class OuterClass" in uml_output
-        assert "class MultiInherited" in uml_output
-        assert "class DecoratedClass" in uml_output
-        
-        # Проверяем отношения наследования
-        assert "Base1 <|-- MultiInherited" in uml_output
-        assert "Base2 <|-- MultiInherited" in uml_output
-
-    def test_very_long_names(self):
-        """Тест очень длинных имен"""
-        long_name = "a" * 1000
-        test_file = Path(self.temp_dir) / "long_names.py"
-        test_file.write_text(f"""
-class {long_name}:
-    def __init__(self):
-        self.{long_name}_field = "value"
-    
-    def {long_name}_method(self):
-        return "test"
-
-{long_name}_global = "global"
-def {long_name}_function():
-    return "function"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем, что длинные имена обработаны
-        assert f"class {long_name}" in uml_output
-        assert f"+ {long_name}_field" in uml_output
-        assert f"+ {long_name}_method()" in uml_output
-        assert f"+ {long_name}_global" in uml_output
-        assert f'class "{long_name}_function()"' in uml_output
-
-    def test_special_characters_in_names(self):
-        """Тест специальных символов в именах"""
-        test_file = Path(self.temp_dir) / "special_chars.py"
-        test_file.write_text("""
-class Test_Class_With_Underscores:
-    def __init__(self):
-        self.field_with_underscores = "value"
-    
-    def method_with_underscores(self):
-        return "test"
-
-class TestClassWithNumbers123:
-    def method123(self):
-        return "test"
-
-# Глобальные переменные с специальными символами
-test_variable_123 = "value"
-TEST_CONSTANT_456 = "constant"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем обработку специальных символов
-        assert "class Test_Class_With_Underscores" in uml_output
-        assert "+ field_with_underscores" in uml_output
-        assert "+ method_with_underscores()" in uml_output
-        assert "class TestClassWithNumbers123" in uml_output
-        assert "+ method123()" in uml_output
-        assert "+ test_variable_123" in uml_output
-        assert "+ TEST_CONSTANT_456" in uml_output
-
-    def test_paths_with_special_characters(self):
-        """Тест путей со специальными символами"""
-        # Создаем директорию с специальными символами
-        special_dir = Path(self.temp_dir) / "test-dir_with_underscores"
-        special_dir.mkdir()
-        
-        test_file = special_dir / "test-file_with_underscores.py"
-        test_file.write_text("""
-class TestClass:
-    def test_method(self):
-        return "test"
-""")
-        
-        # Создаем новый генератор для специальной директории
-        uml_generator = UMLGenerator(special_dir)
-        uml_output = uml_generator.generate_uml()
-        
-        # Проверяем обработку путей со специальными символами
-        assert "class TestClass" in uml_output
-        assert "+ test_method()" in uml_output
-
-    def test_symlinks_and_cyclic_references(self):
-        """Тест симлинков и циклических ссылок"""
-        # Создаем основной файл
-        main_file = Path(self.temp_dir) / "main.py"
-        main_file.write_text("""
-class MainClass:
-    def main_method(self):
-        return "main"
-""")
-        
-        # Создаем симлинк (если поддерживается)
-        try:
-            symlink_file = Path(self.temp_dir) / "symlink.py"
-            symlink_file.symlink_to(main_file)
-            
-            uml_output = self.uml_generator.generate_uml()
-            
-            # Проверяем, что симлинк обработан корректно
-            assert "class MainClass" in uml_output
-        except (OSError, NotImplementedError):
-            # Симлинки могут не поддерживаться на некоторых системах
-            pass
-
-    def test_very_large_files(self):
-        """Тест очень больших файлов"""
-        # Создаем файл с большим количеством классов
-        large_file = Path(self.temp_dir) / "large.py"
-        content = ""
-        
-        for i in range(100):
-            content += f"""
-class Class{i}:
-    def __init__(self):
-        self.field{i} = "value{i}"
-    
-    def method{i}(self):
-        return "method{i}"
+class Child(Base1, Base2):
+    pass
 """
-        
-        large_file.write_text(content)
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем, что все классы обработаны
-        for i in range(100):
-            assert f"class Class{i}" in uml_output
-            assert f"+ field{i}" in uml_output
-            assert f"+ method{i}()" in uml_output
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
 
-    def test_unicode_characters(self):
-        """Тест Unicode символов"""
-        test_file = Path(self.temp_dir) / "unicode.py"
-        test_file.write_text("""
-class КлассСРусскимиСимволами:
-    def __init__(self):
-        self.поле = "значение"
-    
-    def метод(self):
-        return "тест"
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 3
 
-class ClassWithUnicode:
-    def __init__(self):
-        self.field = "value"
-    
-    def method(self):
-        return "test"
+    def test_file_with_complex_decorators(self):
+        """Тест файла со сложными декораторами"""
+        python_code = """
+def decorator1(func):
+    return func
 
-# Глобальные переменные с Unicode
-переменная = "значение"
-VARIABLE = "value"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем обработку Unicode символов
-        assert "class КлассСРусскимиСимволами" in uml_output
-        assert "+ поле" in uml_output
-        assert "+ метод()" in uml_output
-        assert "class ClassWithUnicode" in uml_output
-        assert "+ field" in uml_output
-        assert "+ method()" in uml_output
-        assert "+ переменная" in uml_output
-        assert "+ VARIABLE" in uml_output
-
-    def test_nested_packages(self):
-        """Тест вложенных пакетов"""
-        # Создаем глубоко вложенную структуру
-        deep_dir = Path(self.temp_dir)
-        for i in range(5):
-            deep_dir = deep_dir / f"level{i}"
-            deep_dir.mkdir()
-        
-        # Создаем файл в самом глубоком уровне
-        test_file = deep_dir / "deep.py"
-        test_file.write_text("""
-class DeepClass:
-    def deep_method(self):
-        return "deep"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем обработку глубоко вложенных пакетов
-        assert "class DeepClass" in uml_output
-        assert "+ deep_method()" in uml_output
-        assert 'package "level0.level1.level2.level3.level4.deep"' in uml_output
-
-    def test_empty_classes(self):
-        """Тест пустых классов"""
-        test_file = Path(self.temp_dir) / "empty.py"
-        test_file.write_text("""
-class EmptyClass:
-    pass
-
-class ClassWithOnlyPass:
-    def method(self):
-        pass
-
-class ClassWithDocstring:
-    \"\"\"Docstring only\"\"\"
-    pass
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем обработку пустых классов
-        assert "class EmptyClass" in uml_output
-        assert "class ClassWithOnlyPass" in uml_output
-        assert "class ClassWithDocstring" in uml_output
-        assert "+ method()" in uml_output
-
-    def test_comments_and_docstrings(self):
-        """Тест комментариев и докстрингов"""
-        test_file = Path(self.temp_dir) / "comments.py"
-        test_file.write_text("""
-# Это комментарий
-class TestClass:
-    \"\"\"Это докстринг класса\"\"\"
-    
-    def __init__(self):
-        # Комментарий в методе
-        self.field = "value"
-    
-    def method(self):
-        \"\"\"Это докстринг метода\"\"\"
-        return "test"
-
-# Еще один комментарий
-def function():
-    \"\"\"Докстринг функции\"\"\"
-    return "function"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем, что комментарии и докстринги не мешают обработке
-        assert "class TestClass" in uml_output
-        assert "+ field" in uml_output
-        assert "+ method()" in uml_output
-        assert 'class "function()"' in uml_output
-
-    def test_imports_and_from_imports(self):
-        """Тест импортов"""
-        test_file = Path(self.temp_dir) / "imports.py"
-        test_file.write_text("""
-import os
-import sys
-from pathlib import Path
-from typing import List, Dict
-from abc import ABC, abstractmethod
-
-class TestClass:
-    def method(self):
-        return "test"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем, что импорты не мешают обработке классов
-        assert "class TestClass" in uml_output
-        assert "+ method()" in uml_output
-
-    def test_try_except_blocks(self):
-        """Тест блоков try-except"""
-        test_file = Path(self.temp_dir) / "try_except.py"
-        test_file.write_text("""
-class TestClass:
-    def method_with_try(self):
-        try:
-            return "success"
-        except Exception:
-            return "error"
-    
-    def method_with_finally(self):
-        try:
-            return "try"
-        finally:
-            return "finally"
-""")
-        
-        uml_output = self.uml_generator.generate_uml()
-        
-        # Проверяем обработку методов с try-except
-        assert "class TestClass" in uml_output
-        assert "+ method_with_try()" in uml_output
-        assert "+ method_with_finally()" in uml_output
-
-    def test_decorators(self):
-        """Тест декораторов"""
-        test_file = Path(self.temp_dir) / "decorators.py"
-        test_file.write_text("""
-def my_decorator(func):
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
+def decorator2(param):
+    def wrapper(func):
+        return func
     return wrapper
 
+@decorator1
+@decorator2("param")
+def decorated_function():
+    return "test"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["functions"]) == 1
+
+    def test_file_with_async_await(self):
+        """Тест файла с async/await"""
+        python_code = """
+import asyncio
+
+async def async_function():
+    await asyncio.sleep(1)
+    return "async"
+
 class TestClass:
-    @my_decorator
-    def decorated_method(self):
-        return "decorated"
+    async def async_method(self):
+        await asyncio.sleep(1)
+        return "async method"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["functions"]) == 1
+        assert len(result["classes"]) == 1
+
+    def test_file_with_type_annotations(self):
+        """Тест файла с аннотациями типов"""
+        python_code = """
+from typing import List, Dict, Optional, Union, Tuple
+
+def typed_function(param: str) -> Optional[str]:
+    return param
+
+class TestClass:
+    field: str = "value"
     
-    @property
-    def property_method(self):
-        return "property"
-    
-    @classmethod
-    def class_method(cls):
-        return "class"
-    
-    @staticmethod
-    def static_method():
-        return "static"
-""")
+    def method(self, param: int) -> bool:
+        return True
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["functions"]) == 1
+        assert len(result["classes"]) == 1
+
+    def test_file_with_f_strings(self):
+        """Тест файла с f-строками"""
+        python_code = """
+name = "World"
+greeting = f"Hello, {name}!"
+
+class TestClass:
+    def method(self):
+        return f"Hello, {name}!"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+
+    def test_file_with_walrus_operator(self):
+        """Тест файла с оператором walrus (:=)"""
+        python_code = """
+def test_walrus():
+    if (n := len([1, 2, 3])) > 2:
+        return n
+    return 0
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["functions"]) == 1
+
+    def test_file_with_match_statement(self):
+        """Тест файла с match statement (Python 3.10+)"""
+        python_code = """
+def test_match(value):
+    match value:
+        case 1:
+            return "one"
+        case 2:
+            return "two"
+        case _:
+            return "other"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["functions"]) == 1
+
+    def test_file_with_very_large_content(self):
+        """Тест файла с очень большим содержимым"""
+        # Создаем большой файл
+        large_content = "class TestClass:\n"
+        for i in range(1000):
+            large_content += f"    def method_{i}(self):\n        return {i}\n"
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(large_content)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+        assert len(result["classes"][0][4]) == 1000  # 1000 методов
+
+    def test_file_with_mixed_encodings(self):
+        """Тест файла со смешанными кодировками"""
+        python_code = """
+# -*- coding: utf-8 -*-
+class TestClass:
+    def method(self):
+        return "тест"
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+
+    def test_file_with_syntax_errors(self):
+        """Тест файла с синтаксическими ошибками"""
+        python_code = """
+class TestClass:
+    def broken_method(self:
+        pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 0
+        assert len(self.parser.errors) > 0
+
+    def test_file_with_import_errors(self):
+        """Тест файла с ошибками импорта"""
+        python_code = """
+from nonexistent_module import nonexistent_function
+
+class TestClass:
+    pass
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(python_code)
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(result["classes"]) == 1
+
+    def test_file_with_circular_imports(self):
+        """Тест файла с циклическими импортами"""
+        # Создаем два файла с циклическими импортами
+        file1_content = """
+from test_file2 import ClassB
+
+class ClassA:
+    def method(self):
+        return ClassB()
+"""
+        file2_content = """
+from test_file1 import ClassA
+
+class ClassB:
+    def method(self):
+        return ClassA()
+"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(file1_content)
+            file1_path = Path(f.name)
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(file2_content)
+            file2_path = Path(f.name)
+
+        result1 = self.parser.parse_file(file1_path)
+        result2 = self.parser.parse_file(file2_path)
         
-        uml_output = self.uml_generator.generate_uml()
+        assert len(result1["classes"]) == 1
+        assert len(result2["classes"]) == 1
+
+    def test_file_with_unicode_errors(self):
+        """Тест файла с ошибками Unicode"""
+        # Создаем файл с неправильной кодировкой
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.py', dir=self.temp_dir, delete=False) as f:
+            f.write(b'\xff\xfe\x00\x00')  # Неправильная кодировка
+            file_path = Path(f.name)
+
+        result = self.parser.parse_file(file_path)
+        assert len(self.parser.errors) > 0
+
+    def test_file_with_permission_errors(self):
+        """Тест файла с ошибками доступа"""
+        # Создаем файл без прав на чтение
+        file_path = Path(self.temp_dir) / "no_access.py"
+        with open(file_path, 'w') as f:
+            f.write("class Test: pass")
         
-        # Проверяем обработку декорированных методов
-        assert "class TestClass" in uml_output
-        assert "+ decorated_method()" in uml_output
-        assert "+ property_method()" in uml_output
-        assert "+ class_method()" in uml_output
-        assert "+ {static} static_method()" in uml_output 
+        # Убираем права на чтение
+        os.chmod(file_path, 0o000)
+        
+        try:
+            result = self.parser.parse_file(file_path)
+            assert len(self.parser.errors) > 0
+        finally:
+            # Восстанавливаем права
+            os.chmod(file_path, 0o644)
+
+    def test_empty_directory(self):
+        """Тест пустой директории"""
+        uml_output = self.generator.generate_uml()
+        assert "@startuml" in uml_output
+        assert "@enduml" in uml_output
+        assert "note right : Директория пуста" in uml_output
+
+    def test_directory_with_only_non_python_files(self):
+        """Тест директории только с не-Python файлами"""
+        # Создаем не-Python файлы
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', dir=self.temp_dir, delete=False) as f:
+            f.write("This is a text file")
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', dir=self.temp_dir, delete=False) as f:
+            f.write("# This is a markdown file")
+
+        uml_output = self.generator.generate_uml()
+        assert "@startuml" in uml_output
+        assert "@enduml" in uml_output
+        assert "note right : Директория пуста" in uml_output
+
+    def test_directory_with_hidden_files(self):
+        """Тест директории со скрытыми файлами"""
+        # Создаем скрытый Python файл
+        hidden_file = Path(self.temp_dir) / ".hidden.py"
+        with open(hidden_file, 'w') as f:
+            f.write("class HiddenClass: pass")
+
+        # Создаем обычный Python файл
+        normal_file = Path(self.temp_dir) / "normal.py"
+        with open(normal_file, 'w') as f:
+            f.write("class NormalClass: pass")
+
+        uml_output = self.generator.generate_uml()
+        assert "NormalClass" in uml_output
+        assert "HiddenClass" not in uml_output  # Скрытые файлы игнорируются
+
+    def test_directory_with_symlinks(self):
+        """Тест директории с символическими ссылками"""
+        # Создаем оригинальный файл
+        original_file = Path(self.temp_dir) / "original.py"
+        with open(original_file, 'w') as f:
+            f.write("class OriginalClass: pass")
+
+        # Создаем символическую ссылку
+        symlink_file = Path(self.temp_dir) / "symlink.py"
+        try:
+            symlink_file.symlink_to(original_file)
+        except OSError:
+            # На некоторых системах символические ссылки могут не поддерживаться
+            pytest.skip("Symbolic links not supported on this system")
+
+        uml_output = self.generator.generate_uml()
+        assert "OriginalClass" in uml_output 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 @pytest.fixture
 def temp_directory():
-    """Фикстура для создания временной директории"""
+    """Fixture for creating a temporary directory"""
     temp_dir = tempfile.mkdtemp()
     yield Path(temp_dir)
     shutil.rmtree(temp_dir, ignore_errors=True)
@@ -14,7 +14,7 @@ def temp_directory():
 
 @pytest.fixture
 def sample_python_file(temp_directory):
-    """Фикстура для создания образцового Python файла"""
+    """Fixture for creating a sample Python file"""
     test_file = temp_directory / "sample.py"
     test_file.write_text("""
 class SampleClass:
@@ -29,7 +29,7 @@ class SampleClass:
 
 @pytest.fixture
 def complex_python_file(temp_directory):
-    """Фикстура для создания сложного Python файла"""
+    """Fixture for creating a complex Python file"""
     test_file = temp_directory / "complex.py"
     test_file.write_text("""
 from abc import ABC, abstractmethod
@@ -81,11 +81,11 @@ class ComplexClass:
     def __private_method(self):
         return "private"
 
-# Глобальные переменные
+# Global variables
 GLOBAL_CONSTANT = "constant"
 _protected_global = "protected"
 
-# Глобальные функции
+# Global functions
 def global_function():
     return "global"
 
@@ -97,7 +97,7 @@ def _protected_function():
 
 @pytest.fixture
 def broken_python_file(temp_directory):
-    """Фикстура для создания Python файла с ошибками"""
+    """Fixture for creating a Python file with errors"""
     test_file = temp_directory / "broken.py"
     test_file.write_text("""
 class ValidClass:
@@ -106,28 +106,28 @@ class ValidClass:
 
 class BrokenClass:
     def broken_method(self):
-        print("broken"  # Синтаксическая ошибка
+        print("broken"  # Syntax error
 """)
     return test_file
 
 
 @pytest.fixture
 def empty_directory(temp_directory):
-    """Фикстура для пустой директории"""
+    """Fixture for empty directory"""
     return temp_directory
 
 
 @pytest.fixture
 def project_structure(temp_directory):
-    """Фикстура для создания структуры проекта"""
-    # Создаем структуру проекта
+    """Fixture for creating project structure"""
+    # Create project structure
     project_dir = temp_directory / "project"
     project_dir.mkdir()
     
     subpackage_dir = project_dir / "subpackage"
     subpackage_dir.mkdir()
     
-    # Основной модуль
+    # Main module
     main_file = project_dir / "main.py"
     main_file.write_text("""
 from .utils import Helper
@@ -142,7 +142,7 @@ class Application:
         return "running"
 """)
     
-    # Модуль утилит
+    # Utils module
     utils_file = project_dir / "utils.py"
     utils_file.write_text("""
 class Helper:
@@ -153,7 +153,7 @@ class Helper:
         return "helping"
 """)
     
-    # Модуль моделей
+    # Models module
     models_file = project_dir / "models.py"
     models_file.write_text("""
 class User:
@@ -164,7 +164,7 @@ class User:
         return self.name
 """)
     
-    # Файл в подпакете
+    # File in subpackage
     sub_file = subpackage_dir / "sub.py"
     sub_file.write_text("""
 class SubClass:
