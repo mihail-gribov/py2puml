@@ -6,6 +6,25 @@
 
 **py2puml** is a powerful tool for automatic generation of UML diagrams from Python source code. The parser analyzes the structure of classes, methods, attributes, and their relationships, creating accurate PlantUML diagrams.
 
+## 📋 Table of Contents
+
+- [🚀 Features](#-features)
+- [📊 Example](#-example)
+- [📋 Requirements](#-requirements)
+- [🛠️ Installation](#️-installation)
+  - [Clone the repository](#clone-the-repository)
+  - [Install dependencies](#install-dependencies)
+  - [Install with MCP Server (Optional)](#install-with-mcp-server-optional)
+- [🚀 Quick Start](#-quick-start)
+  - [Basic usage](#basic-usage)
+  - [Multiple ways to run](#multiple-ways-to-run)
+  - [File description feature](#file-description-feature)
+  - [Advanced usage](#advanced-usage)
+- [📖 Usage Examples](#-usage-examples)
+- [🔧 Development](#-development)
+- [📝 Features in Detail](#-features-in-detail)
+- [📄 License](#-license)
+
 ## 🚀 Features
 
 - **Comprehensive Python code analysis**: Parses classes, methods, attributes, and global variables
@@ -20,6 +39,7 @@
 - **Partial parsing**: Can process files with syntax errors
 - **Type hint support**: Analyzes type hints and annotations
 - **Modern CLI architecture**: Command-based interface with clear separation of concerns
+- **MCP Server integration**: Optional MCP (Model Context Protocol) server for enhanced IDE integration with Cursor
 
 ## 📊 Example
 
@@ -55,6 +75,20 @@ venv\Scripts\activate     # Windows
 # Install in development mode
 pip install -e .
 ```
+
+### Install with MCP Server (Optional)
+
+For enhanced IDE integration with Cursor, you can install the MCP (Model Context Protocol) server:
+
+```bash
+# Basic installation with MCP server
+./install.sh --install-mcp
+
+# Install with MCP server and configure Cursor
+./install.sh --install-mcp --configure-cursor
+```
+
+The MCP server provides detailed Python file structure analysis to Cursor agent, enabling better code understanding and documentation generation.
 
 ## 🚀 Quick Start
 
@@ -255,20 +289,6 @@ pip install -e .
 - **YAML**: Alternative structured format
 - **PlantUML**: Standard UML diagram format
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [PlantUML](http://plantuml.com/) for the UML diagram format
-- [Click](https://click.palletsprojects.com/) for the CLI framework
-- [pathspec](https://github.com/cpburnz/python-pathspec) for .gitignore pattern support
