@@ -1,12 +1,10 @@
 #!/bin/bash
 
 # ------------------------------------------------------------------------------
-# AutoGPT Setup Script
+# py2puml Installation Script
 # ------------------------------------------------------------------------------
-# This script automates the installation and setup of AutoGPT on Linux systems.
-# It checks prerequisites, clones the repository, sets up backend and frontend,
-# configures Sentry (optional), and starts all services. Designed for clarity
-# and maintainability. Run this script from a terminal.
+# This script installs py2puml with optional MCP server support.
+# It provides interactive component selection and Cursor configuration.
 # ------------------------------------------------------------------------------
 
 # --- Global Variables ---
@@ -15,12 +13,11 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
-REPO_DIR=""
-CLONE_NEEDED=false
-DOCKER_CMD="docker"
-DOCKER_COMPOSE_CMD="docker compose"
-LOG_DIR=""
-SENTRY_ENABLED=0
+
+# Installation options
+INSTALL_MCP=false
+CONFIGURE_CURSOR=false
+SKIP_MCP=false
 
 # ------------------------------------------------------------------------------
 # Helper Functions
@@ -31,18 +28,11 @@ print_color() {
     printf "${!1}%s${NC}\n" "$2"
 }
 
-# Print the ASCII banner
+# Print the banner
 print_banner() {
     print_color "BLUE" "
-       d8888          888             .d8888b.  8888888b. 88888888888 
-      d88888          888            d88P  Y88b 888   Y88b    888     
-     d88P888          888            888    888 888    888    888     
-    d88P 888 888  888 888888 .d88b.  888        888   d88P    888     
-   d88P  888 888  888 888   d88\"\"88b 888  88888 8888888P\"     888     
-  d88P   888 888  888 888   888  888 888    888 888           888     
- d8888888888 Y88b 888 Y88b. Y88..88P Y88b  d88P 888           888     
-d88P     888  \"Y88888  \"Y888 \"Y88P\"   \"Y8888P88 888           888     
-"
+   py2puml - Python to PlantUML Converter
+   "
 }
 
 # Handle errors and exit
@@ -54,286 +44,253 @@ handle_error() {
     exit 1
 }
 
-# ------------------------------------------------------------------------------
-# Logging Functions
-# ------------------------------------------------------------------------------
-
-# Prepare log directory
-setup_logs() {
-    LOG_DIR="$REPO_DIR/autogpt_platform/logs"
-    mkdir -p "$LOG_DIR"
+# Check if command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
 # ------------------------------------------------------------------------------
-# Health Check Functions
+# Prerequisite Checks
 # ------------------------------------------------------------------------------
 
-# Check service health by polling an endpoint
-check_health() {
-    local url=$1
-    local expected=$2
-    local name=$3
-    local max_attempts=$4
-    local timeout=$5
-
-    if ! command -v curl &> /dev/null; then
-        echo "curl not found. Skipping health check for $name."
-        return 0
-    fi
-
-    echo "Checking $name health..."
-    for ((attempt=1; attempt<=max_attempts; attempt++)); do
-        echo "Attempt $attempt/$max_attempts"
-        response=$(curl -s --max-time "$timeout" "$url")
-        if [[ "$response" == *"$expected"* ]]; then
-            echo "✓ $name is healthy"
-            return 0
-        fi
-        echo "Waiting 5s before next attempt..."
-        sleep 5
-    done
-    echo "✗ $name health check failed after $max_attempts attempts"
-    return 1
-}
-
-# ------------------------------------------------------------------------------
-# Prerequisite and Environment Functions
-# ------------------------------------------------------------------------------
-
-# Check for required commands
-check_command() {
-    local cmd=$1
-    local name=$2
-    local url=$3
-
-    if ! command -v "$cmd" &> /dev/null; then
-        handle_error "$name is not installed. Please install it and try again. Visit $url"
-    else
-        print_color "GREEN" "✓ $name is installed"
-    fi
-}
-
-# Check for optional commands
-check_command_optional() {
-    local cmd=$1
-    if command -v "$cmd" &> /dev/null; then
-        print_color "GREEN" "✓ $cmd is installed"
-    else
-        print_color "YELLOW" "$cmd is not installed. Some features will be skipped."
-    fi
-}
-
-# Check Docker permissions and adjust commands if needed
-check_docker_permissions() {
-    if ! docker info &> /dev/null; then
-        print_color "YELLOW" "Docker requires elevated privileges. Using sudo for Docker commands..."
-        DOCKER_CMD="sudo docker"
-        DOCKER_COMPOSE_CMD="sudo docker compose"
-    fi
-}
-
-# Check all prerequisites
 check_prerequisites() {
-    print_color "GREEN" "AutoGPT's Automated Setup Script"
-    print_color "GREEN" "-------------------------------"
-    print_color "BLUE" "This script will automatically install and set up AutoGPT for you."
-    echo ""
-    print_color "YELLOW" "Checking prerequisites:"
-
-    check_command git "Git" "https://git-scm.com/downloads"
-    check_command docker "Docker" "https://docs.docker.com/get-docker/"
-    check_docker_permissions
-    check_command npm "npm (Node.js)" "https://nodejs.org/en/download/"
-    check_command pnpm "pnpm (Node.js package manager)" "https://pnpm.io/installation"
-    check_command_optional curl "curl"
-
-    print_color "GREEN" "All prerequisites are installed! Starting installation..."
-    echo ""
-}
-
-# Detect installation mode and set repo directory
-# (Clones if not in a repo, otherwise uses current directory)
-detect_installation_mode() {
-    if [[ "$PWD" == */autogpt_platform/installer ]]; then
-        if [[ -d "../../.git" ]]; then
-            REPO_DIR="$(cd ../..; pwd)"
-            CLONE_NEEDED=false
-            cd ../.. || handle_error "Failed to navigate to repository root."
-        else
-            CLONE_NEEDED=true
-            REPO_DIR="$(pwd)/AutoGPT"
-            cd "$(dirname \"$(dirname \"$(dirname \"$PWD\")\")\")" || handle_error "Failed to navigate to parent directory."
-        fi
-    elif [[ -d ".git" && -d "autogpt_platform/installer" ]]; then
-        REPO_DIR="$PWD"
-        CLONE_NEEDED=false
-    else
-        CLONE_NEEDED=true
-        REPO_DIR="$(pwd)/AutoGPT"
+    print_color "BLUE" "Checking prerequisites..."
+    
+    # Check Python
+    if ! command_exists python3; then
+        handle_error "Python 3 is required but not installed"
     fi
-}
-
-# Clone the repository if needed
-clone_repository() {
-    if [ "$CLONE_NEEDED" = true ]; then
-        print_color "BLUE" "Cloning AutoGPT repository..."
-        if git clone https://github.com/Significant-Gravitas/AutoGPT.git "$REPO_DIR"; then
-            print_color "GREEN" "✓ Repo cloned successfully!"
-        else
-            handle_error "Failed to clone the repository."
-        fi
-    else
-        print_color "GREEN" "Using existing AutoGPT repository"
+    
+    # Check pip
+    if ! command_exists pip3; then
+        handle_error "pip3 is required but not installed"
     fi
-}
-
-# Prompt for Sentry enablement and set global flag
-prompt_sentry_enablement() {
-    print_color "YELLOW" "Would you like to enable debug information to be shared so we can fix your issues? [Y/n]"
-    read -r sentry_answer
-    case "${sentry_answer,,}" in
-        ""|y|yes)
-            SENTRY_ENABLED=1
-            ;;
-        n|no)
-            SENTRY_ENABLED=0
-            ;;
-        *)
-            print_color "YELLOW" "Invalid input. Defaulting to yes. Sentry will be enabled."
-            SENTRY_ENABLED=1
-            ;;
-    esac
+    
+    # Check Python version
+    python_version=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    required_version="3.7"
+    
+    if [ "$(printf '%s\n' "$required_version" "$python_version" | sort -V | head -n1)" != "$required_version" ]; then
+        handle_error "Python 3.7 or higher is required. Found: $python_version"
+    fi
+    
+    print_color "GREEN" "✓ Prerequisites check passed"
 }
 
 # ------------------------------------------------------------------------------
-# Setup Functions
+# Installation Functions
 # ------------------------------------------------------------------------------
 
-# Set up backend services and configure Sentry if enabled
-setup_backend() {
-    print_color "BLUE" "Setting up backend services..."
-    cd "$REPO_DIR/autogpt_platform" || handle_error "Failed to navigate to backend directory."
-    cp .env.example .env || handle_error "Failed to copy environment file."
-
-    # Set SENTRY_DSN in backend/.env
-    cd backend || handle_error "Failed to navigate to backend subdirectory."
-    cp .env.example .env || handle_error "Failed to copy backend environment file."
-    sentry_url="https://11d0640fef35640e0eb9f022eb7d7626@o4505260022104064.ingest.us.sentry.io/4507890252447744"
-    if [ "$SENTRY_ENABLED" = "1" ]; then
-        sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=$sentry_url|" .env || echo "SENTRY_DSN=$sentry_url" >> .env
-        print_color "GREEN" "Sentry enabled in backend."
+install_py2puml() {
+    print_color "BLUE" "Installing py2puml..."
+    
+    # Install in development mode
+    if pip3 install -e .; then
+        print_color "GREEN" "✓ py2puml installed successfully"
     else
-        sed -i "s|^SENTRY_DSN=.*$|SENTRY_DSN=|" .env || echo "SENTRY_DSN=" >> .env
-        print_color "YELLOW" "Sentry not enabled in backend."
+        handle_error "Failed to install py2puml"
     fi
-    cd .. # back to autogpt_platform
-
-    $DOCKER_COMPOSE_CMD down || handle_error "Failed to stop existing backend services."
-    $DOCKER_COMPOSE_CMD up -d --build || handle_error "Failed to start backend services."
-    print_color "GREEN" "✓ Backend services started successfully"
 }
 
-# Set up frontend application
-setup_frontend() {
-    print_color "BLUE" "Setting up frontend application..."
-    cd "$REPO_DIR/autogpt_platform/frontend" || handle_error "Failed to navigate to frontend directory."
-    cp .env.example .env || handle_error "Failed to copy frontend environment file."
-    corepack enable || handle_error "Failed to enable corepack."
-    pnpm install || handle_error "Failed to install frontend dependencies."
-    print_color "GREEN" "✓ Frontend dependencies installed successfully"
+install_mcp_server() {
+    print_color "BLUE" "Installing MCP server..."
+    
+    # Make MCP server executable
+    if chmod +x mcp_file_analyzer.py; then
+        print_color "GREEN" "✓ MCP server made executable"
+    else
+        print_color "YELLOW" "Warning: Could not make MCP server executable"
+    fi
+    
+    # Test MCP server (check if it can be imported and instantiated)
+    if python3 -c "from mcp_file_analyzer import MCPFileAnalyzer; analyzer = MCPFileAnalyzer(); print('MCP server test passed')" >/dev/null 2>&1; then
+        print_color "GREEN" "✓ MCP server test passed"
+    else
+        print_color "YELLOW" "Warning: MCP server test failed"
+    fi
 }
 
-# Run backend and frontend setup concurrently and manage logs
-run_concurrent_setup() {
-    setup_logs
-    backend_log="$LOG_DIR/backend_setup.log"
-    frontend_log="$LOG_DIR/frontend_setup.log"
-
-    : > "$backend_log"
-    : > "$frontend_log"
-
-    setup_backend > "$backend_log" 2>&1 &
-    backend_pid=$!
-    echo "Backend setup finished."
-
-    setup_frontend > "$frontend_log" 2>&1 &
-    frontend_pid=$!
-    echo "Frontend setup finished."
-
-    show_spinner "$backend_pid" "$frontend_pid"
-
-    wait $backend_pid; backend_status=$?
-    wait $frontend_pid; frontend_status=$?
-
-    if [ $backend_status -ne 0 ]; then
-        print_color "RED" "Backend setup failed. See log: $backend_log"
-        exit 1
+configure_cursor() {
+    print_color "BLUE" "Configuring Cursor for MCP server..."
+    
+    # Create Cursor configuration directory
+    cursor_config_dir="$HOME/.cursor"
+    mkdir -p "$cursor_config_dir"
+    
+    # Create backup of existing mcp.json if it exists
+    if [[ -f "$cursor_config_dir/mcp.json" ]]; then
+        backup_file="$cursor_config_dir/mcp.json.backup"
+        cp "$cursor_config_dir/mcp.json" "$backup_file"
+        print_color "GREEN" "✓ Backup created: $backup_file"
     fi
-
-    if [ $frontend_status -ne 0 ]; then
-        print_color "RED" "Frontend setup failed. See log: $frontend_log"
-        exit 1
-    fi
-
+    
+    # Create MCP server configuration
+    cat > "$cursor_config_dir/mcp.json" << EOF
+{
+    "mcpServers": {
+        "context7": {
+            "url": "https://mcp.context7.com/mcp"
+        },
+        "how_to_do": {
+            "transport": "stdio",
+            "command": "python3",
+            "args": [
+                "/home/mike/.cursor/tools/how_to_do.py"
+            ]
+        },
+        "py-analyzer": {
+            "command": "python3",
+            "args": ["$(pwd)/mcp_file_analyzer.py"],
+            "env": {}
+        }
+    }
+}
+EOF
+    
+    print_color "GREEN" "✓ Cursor configuration created at $cursor_config_dir/mcp.json"
+    print_color "YELLOW" "Note: You may need to restart Cursor for changes to take effect"
 }
 
-# Show a spinner while background jobs run
-show_spinner() {
-    local backend_pid=$1
-    local frontend_pid=$2
-    spin='-\|/'
-    i=0
-    messages=("Working..." "Still working..." "Setting up dependencies..." "Almost there...")
-    msg_index=0
-    msg_counter=0
-    clear_line="                                                                               "
+# ------------------------------------------------------------------------------
+# Interactive Selection
+# ------------------------------------------------------------------------------
 
-    while kill -0 $backend_pid 2>/dev/null || kill -0 $frontend_pid 2>/dev/null; do
-        i=$(( (i+1) % 4 ))
-        msg_counter=$(( (msg_counter+1) % 300 ))
-        if [ $msg_counter -eq 0 ]; then
-            msg_index=$(( (msg_index+1) % ${#messages[@]} ))
-        fi
-        printf "\r${clear_line}\r${YELLOW}[%c]${NC} %s" "${spin:$i:1}" "${messages[$msg_index]}"
-        sleep .1
+show_menu() {
+    echo ""
+    print_color "BLUE" "py2puml Installation Options:"
+    echo "1) Install py2puml only (basic functionality)"
+    echo "2) Install py2puml + MCP server (recommended)"
+    echo "3) Install py2puml + MCP server + configure Cursor"
+    echo "4) Exit"
+    echo ""
+}
+
+get_user_choice() {
+    while true; do
+        read -p "Please select an option (1-4): " choice
+        case $choice in
+            1)
+                INSTALL_MCP=false
+                CONFIGURE_CURSOR=false
+                break
+                ;;
+            2)
+                INSTALL_MCP=true
+                CONFIGURE_CURSOR=false
+                break
+                ;;
+            3)
+                INSTALL_MCP=true
+                CONFIGURE_CURSOR=true
+                break
+                ;;
+            4)
+                print_color "YELLOW" "Installation cancelled"
+                exit 0
+                ;;
+            *)
+                print_color "RED" "Invalid option. Please select 1-4."
+                ;;
+        esac
     done
-    printf "\r${clear_line}\r${GREEN}[✓]${NC} Setup completed!\n"
 }
 
 # ------------------------------------------------------------------------------
-# Main Entry Point
+# Command Line Arguments
+# ------------------------------------------------------------------------------
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --install-mcp)
+                INSTALL_MCP=true
+                shift
+                ;;
+            --skip-mcp)
+                SKIP_MCP=true
+                shift
+                ;;
+            --configure-cursor)
+                CONFIGURE_CURSOR=true
+                shift
+                ;;
+            --help|-h)
+                echo "Usage: $0 [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  --install-mcp        Install MCP server"
+                echo "  --skip-mcp          Skip MCP server installation"
+                echo "  --configure-cursor  Configure Cursor for MCP server"
+                echo "  --help, -h          Show this help message"
+                echo ""
+                echo "If no options are provided, interactive mode will be used."
+                exit 0
+                ;;
+            *)
+                print_color "RED" "Unknown option: $1"
+                echo "Use --help for usage information"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
+# ------------------------------------------------------------------------------
+# Main Installation Process
 # ------------------------------------------------------------------------------
 
 main() {
     print_banner
+    
+    # Parse command line arguments
+    parse_arguments "$@"
+    
+    # Check prerequisites
     check_prerequisites
-    prompt_sentry_enablement
-    detect_installation_mode
-    clone_repository
-    setup_logs
-    run_concurrent_setup
-
-    print_color "YELLOW" "Starting frontend..."
-    (cd "$REPO_DIR/autogpt_platform/frontend" && pnpm dev > "$LOG_DIR/frontend_dev.log" 2>&1 &)
-
-    print_color "YELLOW" "Waiting for services to start..."
-    sleep 20
-
-    print_color "YELLOW" "Verifying services health..."
-    check_health "http://localhost:8006/health" "\"status\":\"healthy\"" "Backend" 6 15 
-    check_health "http://localhost:3000/health" "Yay im healthy" "Frontend" 6 15
-
-    if [ $backend_status -ne 0 ] || [ $frontend_status -ne 0 ]; then
-        print_color "RED" "Setup failed. See logs for details."
-        exit 1
+    
+    # If no command line options, show interactive menu
+    if [[ "$INSTALL_MCP" == false && "$SKIP_MCP" == false && "$CONFIGURE_CURSOR" == false ]]; then
+        show_menu
+        get_user_choice
     fi
-
-    print_color "GREEN" "Setup complete!"
-    print_color "BLUE" "Access AutoGPT at: http://localhost:3000"
-    print_color "YELLOW" "To stop services, press Ctrl+C and run 'docker compose down' in $REPO_DIR/autogpt_platform"
+    
+    # Install py2puml
+    install_py2puml
+    
+    # Install MCP server if requested
+    if [[ "$INSTALL_MCP" == true && "$SKIP_MCP" == false ]]; then
+        install_mcp_server
+    fi
+    
+    # Configure Cursor if requested
+    if [[ "$CONFIGURE_CURSOR" == true ]]; then
+        configure_cursor
+    fi
+    
+    # Final summary
     echo ""
-    print_color "GREEN" "Press Enter to exit (services will keep running)..."
+    print_color "GREEN" "Installation completed successfully!"
+    echo ""
+    
+    if [[ "$INSTALL_MCP" == true ]]; then
+        print_color "BLUE" "MCP server is available at: $(pwd)/mcp_file_analyzer.py"
+        echo "You can test it with: python3 mcp_file_analyzer.py"
+    fi
+    
+    if [[ "$CONFIGURE_CURSOR" == true ]]; then
+        print_color "BLUE" "Cursor has been configured for MCP server"
+        echo "Restart Cursor to activate the MCP server"
+    fi
+    
+    echo ""
+    print_color "YELLOW" "Press Enter to exit..."
     read -r
 }
 
-main
+# ------------------------------------------------------------------------------
+# Script Execution
+# ------------------------------------------------------------------------------
+
+# Run main function with all arguments
+main "$@"
