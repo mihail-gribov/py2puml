@@ -41,8 +41,8 @@ Issues = "https://github.com/py2puml/py2puml/issues"
 py2puml = "cli:main"
 
 [tool.setuptools]
-packages = ["py2puml"]
-py-modules = ["cli"]
+py-modules = ["cli", "cli_direct", "uml_generator_adapter"]
+packages = ["core", "utils"]
 
 [tool.setuptools.package-data]
 "*" = ["*.txt", "*.md", "*.puml"]
