@@ -39,7 +39,7 @@
 - **Partial parsing**: Can process files with syntax errors
 - **Type hint support**: Analyzes type hints and annotations
 - **Modern CLI architecture**: Command-based interface with clear separation of concerns
-- **Standalone single-file script**: Complete functionality in one portable `py2uml.py` file
+- **🎯 Standalone single-file script**: Complete functionality in one portable `py2uml.py` file - no installation required!
 - **MCP Server integration**: Optional MCP (Model Context Protocol) server for enhanced IDE integration with Cursor
 
 ## 📊 Example
@@ -93,7 +93,24 @@ The MCP server provides detailed Python file structure analysis to Cursor agent,
 
 ## 🚀 Quick Start
 
-### Basic usage
+### 🎯 Single-File Standalone Script (Recommended for Quick Use)
+
+**The easiest way to use py2puml is with the standalone `py2uml.py` script:**
+
+```bash
+# Download just the py2uml.py file and use it immediately
+python py2uml.py generate ./my_python_project ./output/uml_diagram.puml
+python py2uml.py describe ./src/models.py
+```
+
+**Advantages of the standalone script:**
+- ✅ **No installation required** - just download one file
+- ✅ **No dependencies** - works with standard Python libraries
+- ✅ **Portable** - can be shared and used anywhere
+- ✅ **Complete functionality** - includes all features in one file
+- ✅ **Self-contained** - no need for the full project structure
+
+### Basic usage (after installation)
 
 **Generate UML diagram from directory:**
 ```bash
@@ -107,7 +124,20 @@ py2puml describe ./src/models.py
 
 ### Multiple ways to run
 
-**After installation (recommended):**
+**🎯 Single-file script (standalone) - RECOMMENDED:**
+```bash
+python py2uml.py generate src/ output.puml
+python py2uml.py describe src/models.py
+```
+
+The `py2uml.py` script is a completely standalone version that includes all functionality in a single file. This is perfect for:
+- ✅ **Quick deployment without installation** - just download one file
+- ✅ **Sharing with others** who don't have the full project
+- ✅ **Running in restricted environments** where you can't install packages
+- ✅ **Creating portable UML generation tools**
+- ✅ **No external dependencies** - works with standard Python libraries
+
+**After installation:**
 ```bash
 py2puml generate src/ output.puml
 py2puml describe src/models.py
@@ -118,18 +148,6 @@ py2puml describe src/models.py
 python cli_direct.py generate src/ output.puml
 python cli_direct.py describe src/models.py
 ```
-
-**Single-file script (standalone):**
-```bash
-python py2uml.py generate src/ output.puml
-python py2uml.py describe src/models.py
-```
-
-The `py2uml.py` script is a completely standalone version that includes all functionality in a single file. This is perfect for:
-- Quick deployment without installation
-- Sharing with others who don't have the full project
-- Running in environments where you can't install packages
-- Creating portable UML generation tools
 
 ### File description feature
 
@@ -241,6 +259,30 @@ python py2uml.py generate ./src/ ./output/diagram.puml
 
 # Describe file with standalone script
 python py2uml.py describe ./src/models.py --format json
+```
+
+### 🎯 Standalone Script Examples
+
+**Quick start with just one file:**
+```bash
+# Download py2uml.py and use immediately
+curl -O https://raw.githubusercontent.com/your-repo/py2puml/main/py2uml.py
+python py2uml.py generate ./my_project ./diagram.puml
+```
+
+**All standalone script commands:**
+```bash
+# Generate UML diagram
+python py2uml.py generate ./src/ ./output/diagram.puml
+python py2uml.py generate ./src/ ./output/diagram.puml --no-gitignore
+
+# Analyze single file
+python py2uml.py describe ./src/models.py
+python py2uml.py describe ./src/models.py --format json
+python py2uml.py describe ./src/models.py --format yaml --no-docs
+
+# Show help
+python py2uml.py
 ```
 
 **Generated PlantUML:**
