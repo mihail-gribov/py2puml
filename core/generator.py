@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 
 from .file_filter import FileFilter
-from .parser import PythonParser
+from .parser import PythonParser, CLASS_STYLE_CONFIG
 
 
 class UMLGenerator:
@@ -143,7 +143,17 @@ class UMLGenerator:
         """
         try:
             class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
-            class_str = f"  {class_type} {class_name} {{\n"
+            
+            # Get style configuration for the class type
+            style_config = CLASS_STYLE_CONFIG.get(class_type, CLASS_STYLE_CONFIG["class"])
+            keyword = style_config["keyword"]
+            color = style_config["color"]
+            
+            # Format class declaration with optional background color
+            if color:
+                class_str = f"  {keyword} \"{class_name}\" << (C,{color}) >> {{\n"
+            else:
+                class_str = f"  {keyword} \"{class_name}\" {{\n"
             
             # Process fields
             for prefix, field in fields:

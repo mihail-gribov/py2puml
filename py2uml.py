@@ -39,6 +39,30 @@ import fnmatch
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 
+# Configuration for class type styling
+CLASS_STYLE_CONFIG = {
+    "class": {
+        "keyword": "class",
+        "color": None,  # Standard color
+        "stereotype": None
+    },
+    "abstract": {
+        "keyword": "abstract", 
+        "color": "#FFFFFF",  # White
+        "stereotype": None
+    },
+    "dataclass": {
+        "keyword": "class",
+        "color": "#90EE90",  # Light green
+        "stereotype": None
+    },
+    "interface": {
+        "keyword": "interface",
+        "color": "#FFFFFF",  # White
+        "stereotype": None
+    }
+}
+
 # Check for optional dependencies
 try:
     import yaml
@@ -436,7 +460,7 @@ class PythonParser:
             return "dataclass"
         
         if abstract_method_count > 0:
-            return "abstract class"
+            return "abstract"
         elif has_fields and total_method_count == 0:
             return "dataclass"
         elif total_method_count == 0:
@@ -517,12 +541,19 @@ class PythonParser:
     def _format_name_with_decorators(self, name: str, decorators: List[str]) -> str:
         """
         Format name with decorator suffixes.
+        Excludes dataclass decorator since it's handled by styling.
         """
         if not decorators:
             return name
         
+        # Filter out dataclass decorator since it's handled by styling
+        filtered_decorators = [d for d in decorators if d != 'dataclass']
+        
+        if not filtered_decorators:
+            return name
+        
         # Sort decorators for consistent output
-        sorted_decorators = sorted(decorators)
+        sorted_decorators = sorted(filtered_decorators)
         decorator_suffix = "".join(f"@{d}" for d in sorted_decorators)
         return f"{name}{decorator_suffix}"
     
@@ -876,7 +907,17 @@ class UMLGenerator:
         """Format the information of a class for UML representation."""
         try:
             class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
-            class_str = f"  {class_type} {class_name} {{\n"
+            
+            # Get style configuration for the class type
+            style_config = CLASS_STYLE_CONFIG.get(class_type, CLASS_STYLE_CONFIG["class"])
+            keyword = style_config["keyword"]
+            color = style_config["color"]
+            
+            # Format class declaration with optional background color
+            if color:
+                class_str = f"  {keyword} \"{class_name}\" << (C,{color}) >> {{\n"
+            else:
+                class_str = f"  {keyword} \"{class_name}\" {{\n"
             
             for prefix, field in fields:
                 try:

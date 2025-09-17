@@ -35,8 +35,14 @@
 - **Inheritance support**: Correctly displays class hierarchies
 - **Visibility management**: Distinguishes public, protected, and private class members
 - **Property access annotations**: Automatically detects and annotates Python properties with access levels (`{read write}`, `{read only}`, `{write only}`)
+- **🎨 Custom class formatting**: Advanced styling system for different class types with background colors
+  - **Regular classes**: Standard styling with default background
+  - **Abstract classes**: `abstract` keyword with white background (`#FFFFFF`)
+  - **Dataclasses**: `class` keyword with green background (`#90EE90`) - replaces `dataclass` keyword
+  - **Interfaces**: `interface` keyword with white background (`#FFFFFF`)
+  - **PlantUML syntax**: Uses `<< (C,#COLOR) >>` for proper background color rendering
 - **🎯 Decorator handling**: Comprehensive support for Python decorators with intelligent display rules
-  - **Class decorators**: Displayed as `ClassName@decorator` (e.g., `User@dataclass`)
+  - **Class decorators**: Smart handling - `@dataclass` decorator excluded from class name (handled by styling)
   - **Method decorators**: Smart filtering based on decorator type
     - **Static methods**: `{static} method_name()` - `@staticmethod` excluded from name
     - **Class methods**: `method_name()` - `@classmethod` excluded from name  
@@ -193,6 +199,58 @@ py2puml generate ./src/ ./output/diagram.puml --use-gitignore
 ```
 
 ## 📖 Usage Examples
+
+### 🎨 Custom Class Formatting Example
+
+The new custom class formatting feature provides visual distinction between different class types:
+
+```python
+# sample.py
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+class RegularClass:                    # Standard styling
+    def __init__(self, name: str):
+        self.name = name
+
+@dataclass
+class DataClass:                       # Green background
+    name: str
+    value: int
+
+class AbstractClass(ABC):              # White background
+    @abstractmethod
+    def method(self):
+        pass
+
+class Interface:                       # White background
+    pass
+```
+
+**Generate UML with custom formatting:**
+```bash
+python py2uml.py generate ./sample.py output.puml
+```
+
+**Resulting PlantUML:**
+```plantuml
+class "RegularClass" {                 // Standard background
+  + name
+  ~ __init__(name)
+}
+
+class "DataClass" << (C,#90EE90) >> {  // Green background
+  + name: str
+  + value: int
+}
+
+abstract "AbstractClass" << (C,#FFFFFF) >> {  // White background
+  + {abstract} method()
+}
+
+interface "Interface" << (C,#FFFFFF) >> {     // White background
+}
+```
 
 ### Analyze a single file
 ```bash

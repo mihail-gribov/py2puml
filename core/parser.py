@@ -4,6 +4,31 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
 
 
+# Configuration for class type styling
+CLASS_STYLE_CONFIG = {
+    "class": {
+        "keyword": "class",
+        "color": None,  # Standard color
+        "stereotype": None
+    },
+    "abstract": {
+        "keyword": "abstract", 
+        "color": "#FFFFFF",  # White
+        "stereotype": None
+    },
+    "dataclass": {
+        "keyword": "class",
+        "color": "#90EE90",  # Light green
+        "stereotype": None
+    },
+    "interface": {
+        "keyword": "interface",
+        "color": "#FFFFFF",  # White
+        "stereotype": None
+    }
+}
+
+
 class PythonParser:
     """
     Handles parsing of Python source code to extract classes, functions, and variables.
@@ -460,13 +485,25 @@ class PythonParser:
             return "dataclass"
         
         if abstract_method_count > 0:
-            return "abstract class"
+            return "abstract"
         elif has_fields and total_method_count == 0:
             return "dataclass"
         elif total_method_count == 0:
             return "interface"
         else:
             return "class"
+    
+    def get_class_style(self, class_type: str) -> Dict[str, Any]:
+        """
+        Get style configuration for a class type.
+        
+        Args:
+            class_type: The type of class (class, abstract, dataclass, interface)
+            
+        Returns:
+            Dictionary containing style configuration
+        """
+        return CLASS_STYLE_CONFIG.get(class_type, CLASS_STYLE_CONFIG["class"])
     
     def _extract_fields_from_init(self, init_method: ast.FunctionDef) -> List[Tuple[str, str]]:
         """
@@ -545,12 +582,19 @@ class PythonParser:
     def _format_name_with_decorators(self, name: str, decorators: List[str]) -> str:
         """
         Format name with decorator suffixes.
+        Excludes dataclass decorator since it's handled by styling.
         """
         if not decorators:
             return name
         
+        # Filter out dataclass decorator since it's handled by styling
+        filtered_decorators = [d for d in decorators if d != 'dataclass']
+        
+        if not filtered_decorators:
+            return name
+        
         # Sort decorators for consistent output
-        sorted_decorators = sorted(decorators)
+        sorted_decorators = sorted(filtered_decorators)
         decorator_suffix = "".join(f"@{d}" for d in sorted_decorators)
         return f"{name}{decorator_suffix}"
     

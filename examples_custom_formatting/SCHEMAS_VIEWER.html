@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Схемы кастомизированного форматирования классов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 25px;
+        }
+        .image-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .legend {
+            background-color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px 5px 0;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .regular { background-color: #bdc3c7; color: #2c3e50; }
+        .abstract { background-color: #FFFFFF; color: #2c3e50; border: 1px solid #bdc3c7; }
+        .dataclass { background-color: #90EE90; color: #2c3e50; }
+        .interface { background-color: #FFFFFF; color: #2c3e50; border: 1px solid #bdc3c7; }
+        .code-block {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .file-info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            color: #0d47a1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Схемы кастомизированного форматирования классов</h1>
+        
+        <div class="success">
+            <strong>✅ Новая система форматирования работает!</strong> 
+            Классы теперь отображаются с правильным фоновым цветом вместо цвета рамки.
+        </div>
+
+        <h2>🎯 Цветовая схема</h2>
+        <div class="legend">
+            <span class="legend-item regular">Обычный класс</span>
+            <span class="legend-item abstract">Абстрактный класс (белый фон)</span>
+            <span class="legend-item dataclass">Датакласс (зеленый фон)</span>
+            <span class="legend-item interface">Интерфейс (белый фон)</span>
+        </div>
+
+        <h2>📊 Базовые примеры (sample_classes.py)</h2>
+        <div class="file-info">
+            📁 Файл: sample_classes.py | 📄 Схема: sample_classes.puml | 🖼️ Изображение: sample_classes.png
+        </div>
+        <p>Демонстрирует основные типы классов с новой системой форматирования:</p>
+        <div class="image-container">
+            <img src="../sample_classes.png" alt="Базовые примеры классов">
+        </div>
+
+        <h3>Примеры PlantUML кода:</h3>
+        <div class="code-block">
+class "RegularClass" {                    // Обычный класс (стандартный фон)
+  + name, + value
+  ~ __init__(name, value)
+  + get_name(), + get_value()
+}
+
+abstract "AbstractShape" << (C,#FFFFFF) >> {  // Абстрактный класс (белый фон)
+  + color
+  + {abstract} area(), + {abstract} perimeter()
+}
+
+class "User" << (C,#90EE90) >> {              // Датакласс (зеленый фон)
+  + age: int, + email: str, + name: str
+  + get_display_name(), + is_adult()
+}
+
+interface "DatabaseConnection" << (C,#FFFFFF) >> {  // Интерфейс (белый фон)
+}
+        </div>
+
+        <h2>🚀 Продвинутые примеры (advanced_examples.py)</h2>
+        <div class="file-info">
+            📁 Файл: advanced_examples.py | 📄 Схема: advanced_examples.puml | 🖼️ Изображение: advanced_examples.png
+        </div>
+        <p>Сложные классы с множественным наследованием, абстрактными методами и вложенными структурами:</p>
+        <div class="image-container">
+            <img src="../advanced_examples.png" alt="Продвинутые примеры классов">
+        </div>
+
+        <h3>Ключевые особенности:</h3>
+        <ul>
+            <li><strong>AbstractRepository</strong> - абстрактный класс с множественными абстрактными методами</li>
+            <li><strong>Order</strong> - сложный датакласс с полями по умолчанию</li>
+            <li><strong>EntityWithTimestamps</strong> - множественное наследование</li>
+            <li><strong>Customer</strong> - датакласс с вложенными структурами</li>
+        </ul>
+
+        <h2>🔍 Граничные случаи (edge_cases.py)</h2>
+        <div class="file-info">
+            📁 Файл: edge_cases.py | 📄 Схема: edge_cases.puml | 🖼️ Изображение: edge_cases.png
+        </div>
+        <p>Специальные сценарии и сложные случаи наследования:</p>
+        <div class="image-container">
+            <img src="../edge_cases.png" alt="Граничные случаи классов">
+        </div>
+
+        <h3>Интересные случаи:</h3>
+        <ul>
+            <li><strong>DataClassWithMethods</strong> - датакласс с дополнительными методами</li>
+            <li><strong>ImplicitDataClass</strong> - класс без методов, но с полями</li>
+            <li><strong>EmptyInterface</strong> - пустой интерфейс</li>
+            <li><strong>ComplexClass</strong> - класс с различными типами методов (public, protected, private, static)</li>
+            <li><strong>MultipleInheritanceClass</strong> - множественное наследование</li>
+        </ul>
+
+        <h2>📈 Все примеры вместе</h2>
+        <div class="file-info">
+            📁 Директория: examples_custom_formatting/ | 📄 Схема: examples_custom_formatting.puml | 🖼️ Изображение: examples_custom_formatting.png
+        </div>
+        <p>Полная диаграмма со всеми 30 классами из всех примеров:</p>
+        <div class="image-container">
+            <img src="../examples_custom_formatting.png" alt="Все примеры классов">
+        </div>
+
+        <h2>✨ Ключевые улучшения</h2>
+        <div class="success">
+            <h3>До изменений (цвет рамки):</h3>
+            <div class="code-block">
+class "DataClass" #90EE90 {              // Цвет рамки
+  // содержимое
+}
+
+abstract "AbstractClass" #FFFFFF {       // Цвет рамки
+  // содержимое
+}
+            </div>
+
+            <h3>После изменений (цвет фона):</h3>
+            <div class="code-block">
+class "DataClass" << (C,#90EE90) >> {    // Зеленый фон
+  // содержимое
+}
+
+abstract "AbstractClass" << (C,#FFFFFF) >> {  // Белый фон
+  // содержимое
+}
+            </div>
+        </div>
+
+        <h2>🎉 Результат</h2>
+        <p>Новая система форматирования классов обеспечивает:</p>
+        <ul>
+            <li>✅ <strong>Правильный фоновый цвет</strong> вместо цвета рамки</li>
+            <li>✅ <strong>Четкое визуальное разделение</strong> типов классов</li>
+            <li>✅ <strong>Улучшенную читаемость</strong> диаграмм</li>
+            <li>✅ <strong>Консистентное использование</strong> ключевых слов</li>
+            <li>✅ <strong>Цветовое кодирование</strong> для быстрого распознавания</li>
+            <li>✅ <strong>Обратную совместимость</strong> с существующими диаграммами</li>
+        </ul>
+
+        <div class="success">
+            <strong>🎯 Задача полностью выполнена!</strong> 
+            Все требования реализованы и протестированы на различных типах классов с правильным фоновым цветом.
+        </div>
+    </div>
+</body>
+</html>
