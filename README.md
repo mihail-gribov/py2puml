@@ -39,6 +39,7 @@
 - **Partial parsing**: Can process files with syntax errors
 - **Type hint support**: Analyzes type hints and annotations
 - **Modern CLI architecture**: Command-based interface with clear separation of concerns
+- **Standalone single-file script**: Complete functionality in one portable `py2uml.py` file
 - **MCP Server integration**: Optional MCP (Model Context Protocol) server for enhanced IDE integration with Cursor
 
 ## 📊 Example
@@ -117,6 +118,18 @@ py2puml describe src/models.py
 python cli_direct.py generate src/ output.puml
 python cli_direct.py describe src/models.py
 ```
+
+**Single-file script (standalone):**
+```bash
+python py2uml.py generate src/ output.puml
+python py2uml.py describe src/models.py
+```
+
+The `py2uml.py` script is a completely standalone version that includes all functionality in a single file. This is perfect for:
+- Quick deployment without installation
+- Sharing with others who don't have the full project
+- Running in environments where you can't install packages
+- Creating portable UML generation tools
 
 ### File description feature
 
@@ -219,6 +232,15 @@ py2puml describe ./src/models.py --format json
 ### Generate UML diagram
 ```bash
 py2puml generate ./src/ ./output/diagram.puml
+```
+
+### Using standalone script
+```bash
+# Generate UML with standalone script
+python py2uml.py generate ./src/ ./output/diagram.puml
+
+# Describe file with standalone script
+python py2uml.py describe ./src/models.py --format json
 ```
 
 **Generated PlantUML:**
