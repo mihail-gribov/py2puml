@@ -35,6 +35,14 @@
 - **Inheritance support**: Correctly displays class hierarchies
 - **Visibility management**: Distinguishes public, protected, and private class members
 - **Property access annotations**: Automatically detects and annotates Python properties with access levels (`{read write}`, `{read only}`, `{write only}`)
+- **🎯 Decorator handling**: Comprehensive support for Python decorators with intelligent display rules
+  - **Class decorators**: Displayed as `ClassName@decorator` (e.g., `User@dataclass`)
+  - **Method decorators**: Smart filtering based on decorator type
+    - **Static methods**: `{static} method_name()` - `@staticmethod` excluded from name
+    - **Class methods**: `method_name()` - `@classmethod` excluded from name  
+    - **Abstract methods**: `{abstract} method_name()` - `@abstractmethod` excluded from name
+    - **Property methods**: `property_name: type {access}` - getters/setters not displayed separately
+    - **Custom decorators**: `method_name@decorator()` - user decorators preserved in name
 - **Robust error handling**: Handles invalid code and filesystem issues gracefully
 - **Visual error marking**: Files with errors are highlighted in red in UML diagrams
 - **Partial parsing**: Can process files with syntax errors
@@ -290,19 +298,29 @@ python py2uml.py
 ```plantuml
 @startuml
 package "src" <<Frame>> #F0F0FF {
-  class User {
+  dataclass User@dataclass {
     + name: str
-    + email: str
-    + __init__(name: str, email: str)
-    + get_name() -> str
-    + get_email() -> str
+    + age: int
+    + email: Optional[str]
+    + display_name: str {read only}
+    + calculate_score@timer()
   }
   
-  class Product {
-    + name: str
-    + price: float
-    + __init__(name: str, price: float)
-    + calculate_tax() -> float
+  class DatabaseConnection@auto_init@singleton {
+    + connect()
+  }
+  
+  class Calculator {
+    # _value: float
+    + value: float {read write}
+    ~ __init__(value)
+    + {static} add(a, b)
+    + from_string(value_str)
+  }
+  
+  abstract class Shape {
+    + {abstract} area()
+    + {abstract} perimeter()
   }
   
   class BankAccount {
@@ -318,7 +336,7 @@ package "src" <<Frame>> #F0F0FF {
   }
 }
 
-BaseModel <|-- User
+ABC <|-- Shape
 @enduml
 ```
 
@@ -363,6 +381,18 @@ pip install -e .
 - **Write-only properties**: Properties with setter but getter raises AttributeError are marked as `{write only}`
 - **Computed properties**: Read-only properties that calculate values on-the-fly
 - **Type annotations**: Extracts return type annotations from property methods
+
+### Decorator Analysis
+- **Class decorators**: All class decorators are displayed as `ClassName@decorator` format
+  - Example: `@dataclass` → `User@dataclass`
+  - Example: `@singleton` + `@auto_init` → `DatabaseConnection@auto_init@singleton`
+- **Method decorators**: Intelligent filtering based on decorator type
+  - **Static methods**: `@staticmethod` decorator is excluded from method name, shown as `{static} method_name()`
+  - **Class methods**: `@classmethod` decorator is excluded from method name, shown as `method_name()`
+  - **Abstract methods**: `@abstractmethod` decorator is excluded from method name, shown as `{abstract} method_name()`
+  - **Property methods**: `@property`, `@property.setter`, `@property.deleter` are processed as properties, not displayed as separate methods
+  - **Custom decorators**: User-defined decorators are preserved in method names as `method_name@decorator()`
+- **Smart filtering**: Prevents duplicate display of property getters/setters and ensures proper UML conventions
 
 ### Error Handling
 - **Syntax errors**: Gracefully handles files with syntax errors

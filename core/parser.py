@@ -78,7 +78,8 @@ class PythonParser:
                         class_name, fields, attributes, static_methods, methods, properties, abstract_method_count = self._process_class_def(n)
                         total_method_count = len(static_methods) + len(methods)
                         bases = [base.id for base in n.bases if isinstance(base, ast.Name)]
-                        class_type = self._determine_class_type(len(fields) > 0, abstract_method_count, total_method_count, bases)
+                        decorators = self._extract_decorators(n)
+                        class_type = self._determine_class_type(len(fields) > 0, abstract_method_count, total_method_count, bases, decorators)
                         class_bases[class_name] = bases
                         classes.append((
                             class_name,
@@ -247,7 +248,9 @@ class PythonParser:
         Process a class definition node to extract its components.
         """
         try:
-            class_name = node.name
+            # Extract decorators and format class name
+            decorators = self._extract_decorators(node)
+            class_name = self._format_name_with_decorators(node.name, decorators)
             methods = []
             fields = []
             attributes = []
@@ -259,11 +262,14 @@ class PythonParser:
                     try:
                         # Check if this is a property
                         is_property = self._is_property_method(body_item)
+                        is_property_setter_deleter = self._is_property_setter_or_deleter(body_item)
+                        
                         if is_property:
                             property_info = self._process_property_method(body_item, node.body)
                             if property_info:
                                 properties.append(property_info)
-                        else:
+                        elif not is_property_setter_deleter:
+                            # Skip property setters and deleters - they are handled by the main property
                             prefix, method_signature, is_abstract, is_static, is_class = self._process_method_def(body_item)
                             if is_abstract:
                                 abstract_method_count += 1
@@ -317,15 +323,26 @@ class PythonParser:
         Process a method definition node to extract its signature and properties.
         """
         try:
+            # Extract decorators and format method name
+            decorators = self._extract_decorators(body_item)
+            
+            # Determine method type first
+            is_abstract = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'abstractmethod' for dec in body_item.decorator_list)
+            is_static = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'staticmethod' for dec in body_item.decorator_list)
+            is_class = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'classmethod' for dec in body_item.decorator_list)
+            
+            # For static, class, and abstract methods, exclude their decorators from name
+            if is_static or is_class or is_abstract:
+                # Remove staticmethod/classmethod/abstractmethod decorators from the list
+                filtered_decorators = [d for d in decorators if d not in ['staticmethod', 'classmethod', 'abstractmethod']]
+                method_name = self._format_name_with_decorators(body_item.name, filtered_decorators)
+            else:
+                method_name = self._format_name_with_decorators(body_item.name, decorators)
+            
             prefix, vis_type = self._visibility(body_item.name)
             
             # Process regular arguments
             args = [arg.arg for arg in body_item.args.args]
-            
-            # Determine method type
-            is_abstract = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'abstractmethod' for dec in body_item.decorator_list)
-            is_static = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'staticmethod' for dec in body_item.decorator_list)
-            is_class = 'decorator_list' in body_item._fields and any(isinstance(dec, ast.Name) and dec.id == 'classmethod' for dec in body_item.decorator_list)
             
             # Remove self/cls from signature for all methods (UML simplification)
             if is_class and args and args[0] == 'cls':
@@ -333,7 +350,7 @@ class PythonParser:
             elif not is_static and not is_class and args and args[0] == 'self':
                 args = args[1:]
             
-            method_signature = f"{body_item.name}({', '.join(args)})"
+            method_signature = f"{method_name}({', '.join(args)})"
             if is_abstract:
                 prefix = prefix + ' {abstract}'
             elif is_static:
@@ -399,6 +416,10 @@ class PythonParser:
         Process a function definition node.
         """
         try:
+            # Extract decorators and format function name
+            decorators = self._extract_decorators(node)
+            function_name = self._format_name_with_decorators(node.name, decorators)
+            
             prefix, vis_type = self._visibility(node.name)
             args = []
             
@@ -410,7 +431,7 @@ class PythonParser:
                 else:
                     args.append(arg_name)
             
-            function_signature = f"{prefix} {node.name}({', '.join(args)})"
+            function_signature = f"{prefix} {function_name}({', '.join(args)})"
             return function_signature
         except Exception as e:
             return f"+ {node.name if hasattr(node, 'name') else 'unknown'}()"
@@ -430,10 +451,14 @@ class PythonParser:
         except Exception as e:
             return []
     
-    def _determine_class_type(self, has_fields: bool, abstract_method_count: int, total_method_count: int, bases: Optional[List[str]] = None) -> str:
+    def _determine_class_type(self, has_fields: bool, abstract_method_count: int, total_method_count: int, bases: Optional[List[str]] = None, decorators: Optional[List[str]] = None) -> str:
         """
-        Determine the type of class based on its characteristics.
+        Determine the type of class based on its characteristics and decorators.
         """
+        # Check for dataclass decorator first
+        if decorators and 'dataclass' in decorators:
+            return "dataclass"
+        
         if abstract_method_count > 0:
             return "abstract class"
         elif has_fields and total_method_count == 0:
@@ -482,6 +507,53 @@ class PythonParser:
         else:
             return '+', 'public'  # Public 
     
+    def _extract_decorators(self, node: ast.AST) -> List[str]:
+        """
+        Extract decorator names from AST node (function or class).
+        """
+        decorators = []
+        if hasattr(node, 'decorator_list') and node.decorator_list:
+            for decorator in node.decorator_list:
+                decorator_name = self._get_decorator_name(decorator)
+                if decorator_name:
+                    decorators.append(decorator_name)
+        return decorators
+    
+    def _get_decorator_name(self, decorator: ast.AST) -> str:
+        """
+        Get decorator name from AST decorator node.
+        """
+        try:
+            if isinstance(decorator, ast.Name):
+                return decorator.id
+            elif isinstance(decorator, ast.Attribute):
+                # Handle cases like @property.setter
+                if isinstance(decorator.value, ast.Name):
+                    return f"{decorator.value.id}.{decorator.attr}"
+                else:
+                    return decorator.attr
+            elif isinstance(decorator, ast.Call):
+                # Handle cases like @dataclass(frozen=True)
+                if isinstance(decorator.func, ast.Name):
+                    return decorator.func.id
+                elif isinstance(decorator.func, ast.Attribute):
+                    return decorator.func.attr
+            return "unknown"
+        except Exception:
+            return "unknown"
+    
+    def _format_name_with_decorators(self, name: str, decorators: List[str]) -> str:
+        """
+        Format name with decorator suffixes.
+        """
+        if not decorators:
+            return name
+        
+        # Sort decorators for consistent output
+        sorted_decorators = sorted(decorators)
+        decorator_suffix = "".join(f"@{d}" for d in sorted_decorators)
+        return f"{name}{decorator_suffix}"
+    
     def _is_decorator_function(self, node: ast.FunctionDef) -> bool:
         """
         Check if a function is a decorator by analyzing its structure.
@@ -527,12 +599,30 @@ class PythonParser:
     def _is_property_method(self, node: ast.FunctionDef) -> bool:
         """
         Check if a method is a property (has @property decorator).
+        Only the main @property method should be processed, not @property.setter or @property.deleter.
         """
         try:
             if hasattr(node, 'decorator_list') and node.decorator_list:
                 for decorator in node.decorator_list:
                     if isinstance(decorator, ast.Name) and decorator.id == 'property':
                         return True
+            return False
+        except Exception:
+            return False
+    
+    def _is_property_setter_or_deleter(self, node: ast.FunctionDef) -> bool:
+        """
+        Check if a method is a property setter or deleter (has @property.setter or @property.deleter decorator).
+        These methods should not be processed as regular methods.
+        """
+        try:
+            if hasattr(node, 'decorator_list') and node.decorator_list:
+                for decorator in node.decorator_list:
+                    if isinstance(decorator, ast.Attribute):
+                        if (isinstance(decorator.value, ast.Name) and 
+                            decorator.value.id == node.name and 
+                            decorator.attr in ['setter', 'deleter']):
+                            return True
             return False
         except Exception:
             return False
