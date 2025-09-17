@@ -7,10 +7,11 @@ This is a completely standalone version that includes all functionality in one f
 No installation required - just download and run!
 
 Usage:
-    python py2uml.py generate <directory> <output_file> [--no-gitignore] [--use-gitignore]
+    python py2uml.py generate <directory> [output_file] [--no-gitignore] [--use-gitignore]
     python py2uml.py describe <file> [--format text|json|yaml] [--no-docs]
 
 Examples:
+    python py2uml.py generate src/
     python py2uml.py generate src/ output.puml
     python py2uml.py generate src/ output.puml --no-gitignore
     python py2uml.py describe src/models.py
@@ -203,7 +204,7 @@ class PythonParser:
     
     def _parse_file_partially(self, content: str, file_path: Path) -> Dict[str, Any]:
         """Attempt partial parsing of a file with syntax errors."""
-        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[List, List, List, List, List, int]:
+        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[str, List, List, List, List, int]:
             try:
                 class_node = ast.parse(class_text)
                 for node in class_node.body:
@@ -211,7 +212,7 @@ class PythonParser:
                         return self._process_class_def(node)
             except:
                 pass
-            return [], [], [], [], [], 0
+            return "UnknownClass", [], [], [], [], 0
         
         lines = content.split('\n')
         classes = []
@@ -238,7 +239,7 @@ class PythonParser:
                     i += 1
                 
                 class_text = '\n'.join(class_lines)
-                fields, attributes, static_methods, methods, abstract_method_count = try_parse_class_block(class_text, class_name)
+                class_name_parsed, fields, attributes, static_methods, methods, abstract_method_count = try_parse_class_block(class_text, class_name)
                 class_bases[class_name] = bases
                 classes.append((
                     class_name,
@@ -999,10 +1000,11 @@ def main():
     if len(sys.argv) < 2:
         print("Usage: python py2uml.py <command> [options]")
         print("Commands:")
-        print("  generate <directory> <output_file> [--no-gitignore] [--use-gitignore]")
+        print("  generate <directory> [output_file] [--no-gitignore] [--use-gitignore]")
         print("  describe <file> [--format text|json|yaml] [--no-docs]")
         print("")
         print("Examples:")
+        print("  python py2uml.py generate src/")
         print("  python py2uml.py generate src/ output.puml")
         print("  python py2uml.py generate src/ output.puml --no-gitignore")
         print("  python py2uml.py describe src/models.py")
@@ -1013,13 +1015,22 @@ def main():
     command = sys.argv[1]
     
     if command == "generate":
-        if len(sys.argv) < 4:
-            print("Error: generate command requires directory and output_file arguments")
-            print("Usage: python py2uml.py generate <directory> <output_file> [--no-gitignore] [--use-gitignore]")
+        if len(sys.argv) < 3:
+            print("Error: generate command requires directory argument")
+            print("Usage: python py2uml.py generate <directory> [output_file] [--no-gitignore] [--use-gitignore]")
             sys.exit(1)
         
         directory = sys.argv[2]
-        output_file = sys.argv[3]
+        
+        # Check if output_file is provided (not a flag)
+        output_file = None
+        if len(sys.argv) >= 4 and not sys.argv[3].startswith('--'):
+            output_file = sys.argv[3]
+        
+        # If no output file specified, use index.puml in the analyzed directory
+        if output_file is None:
+            directory_path = Path(directory)
+            output_file = str(directory_path / "index.puml")
         
         # Parse options
         no_gitignore = '--no-gitignore' in sys.argv
