@@ -1,0 +1,509 @@
+@startuml
+package "mcp_file_analyzer" <<Frame>> #F0F0FF {
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+  class MCPFileAnalyzer {
+    + analyzer
+    ....
+    ~ __init__()
+    # _validate_file_path(file_path)
+    + get_file_structure(file_path)
+    + handle_mcp_request(request)
+  }
+}
+package "__main__" <<Frame>> #F0F0FF {
+}
+package "uml_generator_adapter" <<Frame>> #F0F0FF {
+  class UMLGenerator {
+    + all_class_bases
+    + directory
+    + errors
+    + file_filter
+    + files_with_errors
+    + generator
+    + parser
+    + uml
+    + use_gitignore
+    ....
+    ~ __init__(directory_path, use_gitignore)
+    # _extract_documentation(node)
+    # _get_file_summary(file_path, classes, functions, variables)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _parse_file_partially(content, file_path)
+    # _process_ast_node(node, classes, functions, global_vars, class_bases, file_path)
+    # _should_ignore(file_path)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + add_inheritance_relations()
+    + describe_file(file_path, format, include_docs)
+    + determine_class_type(has_fields, abstract_method_count, total_method_count, bases)
+    + extract_fields_from_init(init_method)
+    + format_class_info(class_info)
+    + generate_uml()
+    + get_type_annotation(annotation)
+    + parse_python_file(file_path)
+    + process_attributes(body_item)
+    + process_class_def(node)
+    + process_fields(body_item)
+    + process_function_def(node)
+    + process_global_vars(node)
+    + process_method_def(body_item)
+    + visibility(name)
+  }
+}
+package "__init__" <<Frame>> #F0F0FF {
+  class "Global Variables" << (V,#AAAAFF) >> {
+    ~ __version__
+    ~ __author__
+    ~ __all__
+  }
+}
+package "cli" <<Frame>> #F0F0FF {
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+}
+package "py2uml" <<Frame>> #F0F0FF {
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+  class PythonParser {
+    + errors
+    + files_with_errors
+    ....
+    ~ __init__()
+    # _determine_class_type(has_fields, abstract_method_count, total_method_count, bases)
+    # _extract_fields_from_init(init_method)
+    # _get_type_annotation(annotation)
+    # _is_decorator_function(node)
+    # _parse_file_partially(content, file_path)
+    # _process_attributes(body_item)
+    # _process_class_def(node)
+    # _process_fields(body_item)
+    # _process_function_def(node)
+    # _process_global_vars(node)
+    # _process_method_def(body_item)
+    # _visibility(name)
+    + parse_directory(directory_path)
+    + parse_file(file_path)
+  }
+  class FileFilter {
+    + directory
+    + gitignore_specs
+    + use_gitignore
+    ....
+    ~ __init__(directory_path, use_gitignore)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + should_ignore(file_path)
+  }
+  class UMLGenerator {
+    + all_class_bases
+    + directory
+    + errors
+    + file_filter
+    + files_with_errors
+    + parser
+    + uml
+    ....
+    ~ __init__(directory_path, file_filter)
+    # _add_inheritance_relations()
+    # _format_class_info(class_info)
+    + generate_uml()
+  }
+  class FileAnalyzer {
+    + directory
+    + parser
+    ....
+    ~ __init__(directory_path)
+    # _extract_documentation(node)
+    # _format_describe_json(data)
+    # _format_describe_text(data)
+    # _format_describe_yaml(data)
+    # _format_output(data, format)
+    # _get_file_summary(file_path, classes, functions, variables)
+    + describe_file(file_path, format, include_docs)
+  }
+}
+package "cli_direct" <<Frame>> #F0F0FF {
+  class "+ create_parser()" << (F,#DDDD00) >> {
+  }
+  class "+ handle_generate_command(args: argparse.Namespace)" << (F,#DDDD00) >> {
+  }
+  class "+ handle_describe_command(args: argparse.Namespace)" << (F,#DDDD00) >> {
+  }
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+}
+package "test_error" <<Frame>> #FF0000 {
+  note right : Errors:
+  note right : - Unexpected error reading test_error.py: too many values to unpack (expected 5)
+}
+package "utils.error_handling" <<Frame>> #F0F0FF {
+  class "+ validate_file_path(file_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_directory_path(directory_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_output_path(output_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_format(format_name: str)" << (F,#DDDD00) >> {
+  }
+  class "+ handle_cli_error(error: Exception, exit_code: int)" << (F,#DDDD00) >> {
+  }
+  class "+ print_warnings(warnings: list)" << (F,#DDDD00) >> {
+  }
+  interface CLIError {
+  }
+  interface ValidationError {
+  }
+  interface FileNotFoundError {
+  }
+  interface DirectoryNotFoundError {
+  }
+  interface PermissionError {
+  }
+}
+package "utils.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.conftest" <<Frame>> #F0F0FF {
+}
+package "tests.test_installer" <<Frame>> #F0F0FF {
+  class TestInstaller {
+    + setUp()
+    + tearDown()
+    + test_cursor_configuration_creation()
+    + test_file_path_validation()
+    + test_install_py2puml_failure(mock_run)
+    + test_install_py2puml_success(mock_run)
+    + test_mcp_server_executable(mock_chmod)
+    + test_mcp_server_test(mock_run)
+    + test_prerequisites_check_pip(mock_run)
+    + test_prerequisites_check_python(mock_run)
+  }
+  class TestInstallerIntegration {
+    + create_mock_project()
+    + setUp()
+    + tearDown()
+    + test_full_installation_process(mock_run)
+    + test_mcp_server_functionality()
+    + test_project_structure_validation()
+  }
+}
+package "tests.__init__" <<Frame>> #F0F0FF {
+}
+package "core.file_filter" <<Frame>> #F0F0FF {
+  class FileFilter {
+    + directory
+    + gitignore_specs
+    + use_gitignore
+    ....
+    ~ __init__(directory_path, use_gitignore)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + should_ignore(file_path)
+  }
+}
+package "core.__init__" <<Frame>> #F0F0FF {
+}
+package "core.generator" <<Frame>> #F0F0FF {
+  class UMLGenerator {
+    + all_class_bases
+    + directory
+    + errors
+    + file_filter
+    + files_with_errors
+    + parser
+    + uml
+    ....
+    ~ __init__(directory_path, file_filter)
+    # _add_inheritance_relations()
+    # _format_class_info(class_info)
+    + generate_uml()
+  }
+}
+package "core.parser" <<Frame>> #F0F0FF {
+  class PythonParser {
+    + errors
+    + files_with_errors
+    ....
+    ~ __init__()
+    # _determine_class_type(has_fields, abstract_method_count, total_method_count, bases)
+    # _extract_documentation(node)
+    # _extract_fields_from_init(init_method)
+    # _get_type_annotation(annotation)
+    # _is_decorator_function(node)
+    # _parse_file_partially(content, file_path)
+    # _process_attributes(body_item)
+    # _process_class_def(node)
+    # _process_fields(body_item)
+    # _process_function_def(node)
+    # _process_global_vars(node)
+    # _process_method_def(body_item)
+    # _visibility(name)
+    + parse_directory(directory_path)
+    + parse_file(file_path)
+  }
+}
+package "core.analyzer" <<Frame>> #F0F0FF {
+  class FileAnalyzer {
+    + directory
+    + parser
+    ....
+    ~ __init__(directory_path)
+    # _extract_documentation(node)
+    # _format_describe_json(data)
+    # _format_describe_text(data)
+    # _format_describe_yaml(data)
+    # _format_output(data, format)
+    # _get_file_summary(file_path, classes, functions, variables)
+    + describe_file(file_path, format, include_docs)
+  }
+}
+package "tests.functional.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.functional.test_output_format" <<Frame>> #F0F0FF {
+  class TestOutputFormat {
+    + setup_method()
+    + teardown_method()
+    + test_plantuml_abstract_classes()
+    + test_plantuml_complex_structure()
+    + test_plantuml_empty_directory()
+    + test_plantuml_encoding_handling()
+    + test_plantuml_error_handling()
+    + test_plantuml_error_visualization()
+    + test_plantuml_format_generation()
+    + test_plantuml_gitignore_filtering()
+    + test_plantuml_global_functions()
+    + test_plantuml_global_variables()
+    + test_plantuml_inheritance()
+    + test_plantuml_interfaces()
+    + test_plantuml_methods_and_fields()
+    + test_plantuml_package_structure()
+    + test_plantuml_special_characters()
+  }
+}
+package "tests.edge_cases.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.edge_cases.test_edge_cases" <<Frame>> #F0F0FF {
+  class TestEdgeCases {
+    + setup_method()
+    + teardown_method()
+    + test_directory_with_hidden_files()
+    + test_directory_with_only_non_python_files()
+    + test_directory_with_symlinks()
+    + test_empty_directory()
+    + test_empty_file()
+    + test_file_with_async_await()
+    + test_file_with_circular_imports()
+    + test_file_with_complex_decorators()
+    + test_file_with_f_strings()
+    + test_file_with_import_errors()
+    + test_file_with_match_statement()
+    + test_file_with_mixed_encodings()
+    + test_file_with_multiple_inheritance()
+    + test_file_with_nested_classes()
+    + test_file_with_only_comments()
+    + test_file_with_only_whitespace()
+    + test_file_with_permission_errors()
+    + test_file_with_special_characters_in_names()
+    + test_file_with_syntax_errors()
+    + test_file_with_type_annotations()
+    + test_file_with_unicode_characters()
+    + test_file_with_unicode_errors()
+    + test_file_with_very_large_content()
+    + test_file_with_very_long_names()
+    + test_file_with_walrus_operator()
+  }
+}
+package "tests.unit.test_uml_generator" <<Frame>> #F0F0FF {
+  class TestUMLGenerator {
+    + setup_method()
+    + teardown_method()
+    + test_determine_class_type_abstract()
+    + test_determine_class_type_interface()
+    + test_determine_class_type_regular()
+    + test_extract_fields_from_init()
+    + test_files_with_errors_backward_compatibility()
+    + test_files_with_errors_empty_after_clean_parse()
+    + test_files_with_errors_encoding_error()
+    + test_files_with_errors_initialization()
+    + test_files_with_errors_multiple_errors()
+    + test_files_with_errors_permission_error()
+    + test_files_with_errors_syntax_error()
+    + test_format_class_info()
+    + test_generate_uml_error_files_visual_representation()
+    + test_generate_uml_with_error_files()
+    + test_get_type_annotation_complex()
+    + test_get_type_annotation_simple()
+    + test_parse_python_file_nonexistent()
+    + test_parse_python_file_syntax_error()
+    + test_parse_python_file_valid()
+    + test_process_class_def_abstract()
+    + test_process_class_def_simple()
+    + test_process_function_def()
+    + test_process_global_vars()
+    + test_process_method_def_simple()
+    + test_process_method_def_static()
+    + test_visibility_magic()
+    + test_visibility_private()
+    + test_visibility_protected()
+    + test_visibility_public()
+  }
+}
+package "tests.unit.test_describe_file" <<Frame>> #F0F0FF {
+  class TestDescribeFile {
+    + setup_method()
+    + teardown_method()
+    + test_async_functions()
+    + test_class_documentation_extraction()
+    + test_complex_signatures()
+    + test_decorators()
+    + test_empty_file()
+    + test_file_not_found()
+    + test_file_with_only_comments()
+    + test_function_documentation_extraction()
+    + test_inheritance_classes()
+    + test_json_format()
+    + test_multiline_docstrings()
+    + test_nested_classes()
+    + test_no_docs_flag()
+    + test_simple_file_parsing()
+    + test_special_characters()
+    + test_syntax_error_handling()
+    + test_type_annotations()
+    + test_unsupported_format()
+    + test_various_docstring_styles()
+    + test_yaml_format()
+  }
+}
+package "tests.unit.test_gitignore_functionality" <<Frame>> #F0F0FF {
+  class TestGitignoreFunctionality {
+    + setup_method()
+    + teardown_method()
+    + test_gitignore_disabled()
+    + test_gitignore_file_corrupted()
+    + test_gitignore_file_encoding_error()
+    + test_gitignore_file_permission_error()
+    + test_load_gitignore_patterns_empty_file()
+    + test_load_gitignore_patterns_multiple_files()
+    + test_load_gitignore_patterns_nonexistent()
+    + test_load_gitignore_patterns_success()
+    + test_load_gitignore_patterns_with_comments()
+    + test_pathspec_import_error()
+    + test_should_ignore_nested_patterns()
+    + test_should_ignore_pattern_matching()
+    + test_should_ignore_relative_paths()
+    + test_should_ignore_with_pathspec()
+    + test_should_ignore_without_pathspec()
+  }
+}
+package "tests.unit.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.unit.test_new_architecture" <<Frame>> #F0F0FF {
+  class TestFileFilter {
+    + setup_method()
+    + teardown_method()
+    + test_should_ignore_disabled()
+    + test_should_ignore_with_gitignore()
+    + test_should_ignore_without_gitignore()
+  }
+  class TestPythonParser {
+    + setup_method()
+    + teardown_method()
+    + test_parse_file_nonexistent()
+    + test_parse_file_syntax_error()
+    + test_parse_file_valid()
+    + test_visibility_methods()
+  }
+  class TestUMLGenerator {
+    + setup_method()
+    + teardown_method()
+    + test_add_inheritance_relations()
+    + test_format_class_info()
+    + test_generate_uml_empty_directory()
+    + test_generate_uml_with_files()
+  }
+  class TestFileAnalyzer {
+    + setup_method()
+    + teardown_method()
+    + test_describe_file_invalid_format()
+    + test_describe_file_json_format()
+    + test_describe_file_nonexistent()
+    + test_describe_file_text_format()
+    + test_describe_file_yaml_format()
+    + test_get_file_summary()
+  }
+}
+package "tests.integration.test_gitignore_cli" <<Frame>> #F0F0FF {
+  class TestGitignoreCLI {
+    + run_cli_command(args)
+    + setup_method()
+    + teardown_method()
+    + test_cli_gitignore_help_text()
+    + test_cli_gitignore_mutually_exclusive()
+    + test_cli_no_gitignore_file()
+    + test_cli_no_gitignore_flag()
+    + test_cli_use_gitignore_default()
+    + test_cli_use_gitignore_flag()
+    + test_generate_uml_ignored_files_count()
+    + test_generate_uml_output_consistency()
+    + test_generate_uml_with_gitignore()
+    + test_generate_uml_without_gitignore()
+  }
+}
+package "tests.integration.test_describe_file_cli" <<Frame>> #F0F0FF {
+  class TestDescribeFileCLI {
+    + create_test_file(content)
+    + run_cli_command(args)
+    + setup_method()
+    + teardown_method()
+    + test_basic_describe_file_command()
+    + test_combined_flags()
+    + test_complex_file()
+    + test_encoding_handling()
+    + test_file_not_found()
+    + test_help_output()
+    + test_invalid_format()
+    + test_json_format()
+    + test_large_file_handling()
+    + test_missing_required_argument()
+    + test_mutually_exclusive_arguments()
+    + test_no_docs_flag()
+    + test_syntax_error_handling()
+    + test_yaml_format()
+  }
+}
+package "tests.integration.__init__" <<Frame>> #F0F0FF {
+}
+package "tests.integration.test_cli" <<Frame>> #F0F0FF {
+  class TestCLI {
+    + run_cli_command(args)
+    + setup_method()
+    + teardown_method()
+    + test_cli_complex_project()
+    + test_cli_describe_command()
+    + test_cli_empty_directory()
+    + test_cli_file_as_directory()
+    + test_cli_generate_command()
+    + test_cli_help_output()
+    + test_cli_inheritance_relationships()
+    + test_cli_keyboard_interrupt(mock_input)
+    + test_cli_missing_arguments()
+    + test_cli_nonexistent_directory()
+    + test_cli_permission_denied_output()
+    + test_cli_syntax_errors_in_code()
+    + test_cli_version_output()
+  }
+}
+Exception <|-- CLIError
+CLIError <|-- ValidationError
+CLIError <|-- FileNotFoundError
+CLIError <|-- DirectoryNotFoundError
+CLIError <|-- PermissionError
+@enduml

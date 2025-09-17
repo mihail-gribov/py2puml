@@ -635,7 +635,7 @@ class UMLGenerator:
             
             if not pathlist:
                 print(f"Warning: No Python files found in {self.directory}")
-                return "@startuml\nnote right : Directory is empty\n@enduml"
+                return "@startuml\nnote right of \"Empty Directory\"\nDirectory is empty\nend note\n@enduml"
                 
         except Exception as e:
             error_msg = f"Error scanning directory {self.directory}: {e}"
@@ -663,9 +663,6 @@ class UMLGenerator:
                 
                 if file_has_errors:
                     self.uml += f'package "{package_name}" <<Frame>> #FF0000 {{\n'
-                    self.uml += f'  note right : Errors:\n'
-                    for error in self.parser.files_with_errors[str(path)]:
-                        self.uml += f'  note right : - {error}\n'
                 else:
                     self.uml += f'package "{package_name}" <<Frame>> #F0F0FF {{\n'
                 
@@ -680,6 +677,14 @@ class UMLGenerator:
                     self.uml += self._format_class_info(class_info)
 
                 self.uml += '}\n'
+                
+                # Add error notes after package closure
+                if file_has_errors:
+                    self.uml += f'\nnote right of "{package_name}"\n'
+                    self.uml += 'Errors:\n'
+                    for error in self.parser.files_with_errors[str(path)]:
+                        self.uml += f'- {error}\n'
+                    self.uml += 'end note\n'
                 
             except Exception as e:
                 error_msg = f"Error processing file {path}: {e}"

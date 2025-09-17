@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+
+title PlantUML Notes Syntax Examples
+
+' Example 1: Package with class-level note
+package "Example Package" <<Frame>> #FF0000 {
+  class "MyClass" << (F,#DDDD00) >> {
+  }
+  
+  note right of "MyClass"
+  Class-level note:
+  - Works inside package
+  - Attached to specific class
+  - Multi-line content supported
+  end note
+}
+
+' Example 2: Package-level note (outside package)
+note right of "Example Package"
+Package-level note:
+- Works outside package
+- Attached to package element
+- Can contain multiple lines
+end note
+
+' Example 3: Colored note
+note left of "Example Package" #FFAAAA
+Colored note:
+- Background color specified
+- Same syntax as regular notes
+end note
+
+' Example 4: Single line note
+note right of "MyClass" : Single line note content
+
+@enduml
