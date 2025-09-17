@@ -67,7 +67,7 @@ class FileAnalyzer:
             
             # Process classes
             for class_info in classes:
-                class_name, fields, attributes, static_methods, methods, class_type, bases = class_info
+                class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
                 
                 # Extract class documentation
                 class_doc = None
@@ -90,6 +90,7 @@ class FileAnalyzer:
                     'bases': bases,
                     'documentation': class_doc,
                     'fields': [],
+                    'properties': [],
                     'methods': []
                 }
                 
@@ -101,6 +102,17 @@ class FileAnalyzer:
                         'type': field.split(':')[1].strip() if ':' in field else None
                     }
                     class_data['fields'].append(field_data)
+                
+                # Process properties
+                for prefix, property_info in properties:
+                    property_name = property_info.split(':')[0].strip() if ':' in property_info else property_info.split(' ')[0]
+                    property_data = {
+                        'name': property_name,
+                        'visibility': 'public' if prefix.startswith('+') else 'private' if prefix.startswith('-') else 'protected',
+                        'signature': property_info,
+                        'access_level': self._extract_access_level(property_info)
+                    }
+                    class_data['properties'].append(property_data)
                 
                 # Process methods
                 for prefix, method in methods + static_methods:
@@ -283,6 +295,12 @@ class FileAnalyzer:
                         if method['documentation']:
                             output.append(f"        Documentation: {method['documentation']}")
                 
+                if class_data['properties']:
+                    output.append("    Properties:")
+                    for property_item in class_data['properties']:
+                        output.append(f"      {property_item['visibility']} {property_item['signature']}")
+                        output.append(f"        Access: {property_item['access_level']}")
+                
                 if class_data['fields']:
                     output.append("    Fields:")
                     for field in class_data['fields']:
@@ -333,4 +351,23 @@ class FileAnalyzer:
         Returns:
             YAML string
         """
-        return yaml.dump(data, default_flow_style=False, allow_unicode=True) 
+        return yaml.dump(data, default_flow_style=False, allow_unicode=True)
+    
+    def _extract_access_level(self, property_info: str) -> str:
+        """
+        Extract access level from property info string.
+        
+        Args:
+            property_info: Property info string with access level annotation
+            
+        Returns:
+            Access level string (read write, read only, write only)
+        """
+        if '{read write}' in property_info:
+            return 'read write'
+        elif '{read only}' in property_info:
+            return 'read only'
+        elif '{write only}' in property_info:
+            return 'write only'
+        else:
+            return 'unknown' 

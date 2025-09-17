@@ -142,7 +142,7 @@ class UMLGenerator:
             Formatted class string for UML
         """
         try:
-            class_name, fields, attributes, static_methods, methods, class_type, bases = class_info
+            class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
             class_str = f"  {class_type} {class_name} {{\n"
             
             # Process fields
@@ -153,8 +153,16 @@ class UMLGenerator:
                     # Skip problematic fields
                     continue
                     
-            if len(fields) and len(methods):
+            if len(fields) and (len(methods) or len(properties)):
                 class_str += "    ....\n"
+
+            # Process properties
+            for prefix, property_info in properties:
+                try:
+                    class_str += f"    {prefix} {property_info}\n"
+                except Exception as e:
+                    # Skip problematic properties
+                    continue
 
             # Process methods
             for prefix, method in methods:
@@ -164,7 +172,7 @@ class UMLGenerator:
                     # Skip problematic methods
                     continue
 
-            if (len(fields) or len(methods)) and (len(attributes) or len(static_methods)):
+            if (len(fields) or len(methods) or len(properties)) and (len(attributes) or len(static_methods)):
                 class_str += "    __Static__\n"
 
             # Process attributes

@@ -34,6 +34,7 @@
 - **Documentation extraction**: Extract and display docstrings from classes, methods, and functions
 - **Inheritance support**: Correctly displays class hierarchies
 - **Visibility management**: Distinguishes public, protected, and private class members
+- **Property access annotations**: Automatically detects and annotates Python properties with access levels (`{read write}`, `{read only}`, `{write only}`)
 - **Robust error handling**: Handles invalid code and filesystem issues gracefully
 - **Visual error marking**: Files with errors are highlighted in red in UML diagrams
 - **Partial parsing**: Can process files with syntax errors
@@ -303,6 +304,18 @@ package "src" <<Frame>> #F0F0FF {
     + __init__(name: str, price: float)
     + calculate_tax() -> float
   }
+  
+  class BankAccount {
+    # _balance
+    # _account_number
+    ....
+    + balance: float {read write}
+    + account_number: str {read only}
+    + password: None {write only}
+    ~ __init__(initial_balance)
+    + deposit(amount)
+    + withdraw(amount)
+  }
 }
 
 BaseModel <|-- User
@@ -332,6 +345,7 @@ pip install -e .
 - **Inheritance**: Detects and displays class hierarchies
 - **Methods**: Analyzes method signatures with type hints
 - **Attributes**: Identifies class attributes and their types
+- **Properties**: Automatically detects Python properties (@property) and annotates access levels
 - **Visibility**: Distinguishes public (+), protected (#), and private (-) members
 - **Documentation**: Extracts and displays docstrings
 
@@ -340,6 +354,15 @@ pip install -e .
 - **Type hints**: Processes parameter and return type annotations
 - **Documentation**: Extracts function docstrings
 - **Visibility**: All global functions are considered public
+
+### Property Analysis
+- **Property detection**: Automatically identifies methods decorated with @property
+- **Access level determination**: Analyzes getter and setter methods to determine access patterns
+- **Read-write properties**: Properties with both getter and setter are marked as `{read write}`
+- **Read-only properties**: Properties with only getter are marked as `{read only}`
+- **Write-only properties**: Properties with setter but getter raises AttributeError are marked as `{write only}`
+- **Computed properties**: Read-only properties that calculate values on-the-fly
+- **Type annotations**: Extracts return type annotations from property methods
 
 ### Error Handling
 - **Syntax errors**: Gracefully handles files with syntax errors

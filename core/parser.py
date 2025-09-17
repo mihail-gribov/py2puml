@@ -75,7 +75,7 @@ class PythonParser:
             for n in node.body:
                 if isinstance(n, ast.ClassDef):
                     try:
-                        class_name, fields, attributes, static_methods, methods, abstract_method_count = self._process_class_def(n)
+                        class_name, fields, attributes, static_methods, methods, properties, abstract_method_count = self._process_class_def(n)
                         total_method_count = len(static_methods) + len(methods)
                         bases = [base.id for base in n.bases if isinstance(base, ast.Name)]
                         class_type = self._determine_class_type(len(fields) > 0, abstract_method_count, total_method_count, bases)
@@ -86,6 +86,7 @@ class PythonParser:
                             sorted(list(set(attributes)), key=lambda x: x[1]),
                             sorted(list(set(static_methods)), key=lambda x: x[1]),
                             sorted(list(set(methods)), key=lambda x: x[1]),
+                            sorted(list(set(properties)), key=lambda x: x[1]),
                             class_type,
                             bases
                         ))
@@ -177,7 +178,7 @@ class PythonParser:
         """
         Attempt partial parsing of a file with syntax errors.
         """
-        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[List, List, List, List, List, int]:
+        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[List, List, List, List, List, List, int]:
             try:
                 # Attempt to parse only the class
                 class_node = ast.parse(class_text)
@@ -186,7 +187,7 @@ class PythonParser:
                         return self._process_class_def(node)
             except:
                 pass
-            return [], [], [], [], [], 0
+            return [], [], [], [], [], [], 0
         
         # Simple heuristic for extracting classes
         lines = content.split('\n')
@@ -216,7 +217,7 @@ class PythonParser:
                     i += 1
                 
                 class_text = '\n'.join(class_lines)
-                fields, attributes, static_methods, methods, abstract_method_count = try_parse_class_block(class_text, class_name)
+                fields, attributes, static_methods, methods, properties, abstract_method_count = try_parse_class_block(class_text, class_name)
                 class_bases[class_name] = bases
                 classes.append((
                     class_name,
@@ -224,6 +225,7 @@ class PythonParser:
                     sorted(list(set(attributes)), key=lambda x: x[1]),
                     sorted(list(set(static_methods)), key=lambda x: x[1]),
                     sorted(list(set(methods)), key=lambda x: x[1]),
+                    sorted(list(set(properties)), key=lambda x: x[1]),
                     "class",
                     bases
                 ))
@@ -249,18 +251,26 @@ class PythonParser:
             methods = []
             fields = []
             attributes = []
+            properties = []
             abstract_method_count = 0
             static_methods = []
             for body_item in node.body:
                 if isinstance(body_item, ast.FunctionDef):
                     try:
-                        prefix, method_signature, is_abstract, is_static, is_class = self._process_method_def(body_item)
-                        if is_abstract:
-                            abstract_method_count += 1
-                        if is_static or is_class:
-                            static_methods.append((prefix, method_signature))
+                        # Check if this is a property
+                        is_property = self._is_property_method(body_item)
+                        if is_property:
+                            property_info = self._process_property_method(body_item, node.body)
+                            if property_info:
+                                properties.append(property_info)
                         else:
-                            methods.append((prefix, method_signature))
+                            prefix, method_signature, is_abstract, is_static, is_class = self._process_method_def(body_item)
+                            if is_abstract:
+                                abstract_method_count += 1
+                            if is_static or is_class:
+                                static_methods.append((prefix, method_signature))
+                            else:
+                                methods.append((prefix, method_signature))
 
                         if body_item.name == '__init__':
                             fields = self._extract_fields_from_init(body_item)
@@ -297,10 +307,10 @@ class PythonParser:
                     except Exception as e:
                         # Skip problematic attributes
                         continue
-            return class_name, fields, attributes, static_methods, methods, abstract_method_count
+            return class_name, fields, attributes, static_methods, methods, properties, abstract_method_count
         except Exception as e:
             # Return empty values in case of error
-            return "UnknownClass", [], [], [], [], 0
+            return "UnknownClass", [], [], [], [], [], 0
     
     def _process_method_def(self, body_item: ast.FunctionDef) -> Tuple[str, str, bool, bool, bool]:
         """
@@ -510,6 +520,82 @@ class PythonParser:
                     # If function contains a nested function, it might be a decorator
                     return True
             
+            return False
+        except Exception:
+            return False
+    
+    def _is_property_method(self, node: ast.FunctionDef) -> bool:
+        """
+        Check if a method is a property (has @property decorator).
+        """
+        try:
+            if hasattr(node, 'decorator_list') and node.decorator_list:
+                for decorator in node.decorator_list:
+                    if isinstance(decorator, ast.Name) and decorator.id == 'property':
+                        return True
+            return False
+        except Exception:
+            return False
+    
+    def _process_property_method(self, property_node: ast.FunctionDef, class_body: List[ast.AST]) -> Optional[Tuple[str, str]]:
+        """
+        Process a property method to determine its access level and return property info.
+        """
+        try:
+            property_name = property_node.name
+            prefix, _ = self._visibility(property_name)
+            
+            # Check for setter and deleter methods
+            has_setter = False
+            has_deleter = False
+            
+            for body_item in class_body:
+                if isinstance(body_item, ast.FunctionDef) and body_item.name == property_name:
+                    if hasattr(body_item, 'decorator_list') and body_item.decorator_list:
+                        for decorator in body_item.decorator_list:
+                            if isinstance(decorator, ast.Attribute):
+                                if (isinstance(decorator.value, ast.Name) and 
+                                    decorator.value.id == property_name and 
+                                    decorator.attr == 'setter'):
+                                    has_setter = True
+                                elif (isinstance(decorator.value, ast.Name) and 
+                                      decorator.value.id == property_name and 
+                                      decorator.attr == 'deleter'):
+                                    has_deleter = True
+            
+            # Determine access level
+            if has_setter:
+                # Check if getter raises AttributeError (write-only property)
+                if self._getter_raises_attribute_error(property_node):
+                    access_level = "{write only}"
+                else:
+                    access_level = "{read write}"
+            else:
+                access_level = "{read only}"
+            
+            # Get return type annotation if available
+            return_type = ""
+            if property_node.returns:
+                return_type = f": {self._get_type_annotation(property_node.returns)}"
+            
+            property_signature = f"{property_name}{return_type} {access_level}"
+            return (prefix, property_signature)
+            
+        except Exception:
+            return None
+    
+    def _getter_raises_attribute_error(self, property_node: ast.FunctionDef) -> bool:
+        """
+        Check if the property getter raises AttributeError (indicating write-only property).
+        """
+        try:
+            for item in property_node.body:
+                if isinstance(item, ast.Raise):
+                    if isinstance(item.exc, ast.Name) and item.exc.id == 'AttributeError':
+                        return True
+                    elif isinstance(item.exc, ast.Call) and isinstance(item.exc.func, ast.Name):
+                        if item.exc.func.id == 'AttributeError':
+                            return True
             return False
         except Exception:
             return False 

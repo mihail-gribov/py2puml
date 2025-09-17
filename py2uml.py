@@ -114,7 +114,7 @@ class PythonParser:
             for n in node.body:
                 if isinstance(n, ast.ClassDef):
                     try:
-                        class_name, fields, attributes, static_methods, methods, abstract_method_count = self._process_class_def(n)
+                        class_name, fields, attributes, static_methods, methods, properties, abstract_method_count = self._process_class_def(n)
                         total_method_count = len(static_methods) + len(methods)
                         bases = [base.id for base in n.bases if isinstance(base, ast.Name)]
                         class_type = self._determine_class_type(len(fields) > 0, abstract_method_count, total_method_count, bases)
@@ -125,6 +125,7 @@ class PythonParser:
                             sorted(list(set(attributes)), key=lambda x: x[1]),
                             sorted(list(set(static_methods)), key=lambda x: x[1]),
                             sorted(list(set(methods)), key=lambda x: x[1]),
+                            sorted(list(set(properties)), key=lambda x: x[1]),
                             class_type,
                             bases
                         ))
@@ -204,7 +205,7 @@ class PythonParser:
     
     def _parse_file_partially(self, content: str, file_path: Path) -> Dict[str, Any]:
         """Attempt partial parsing of a file with syntax errors."""
-        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[str, List, List, List, List, int]:
+        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[str, List, List, List, List, List, int]:
             try:
                 class_node = ast.parse(class_text)
                 for node in class_node.body:
@@ -212,7 +213,7 @@ class PythonParser:
                         return self._process_class_def(node)
             except:
                 pass
-            return "UnknownClass", [], [], [], [], 0
+            return "UnknownClass", [], [], [], [], [], 0
         
         lines = content.split('\n')
         classes = []
@@ -239,7 +240,7 @@ class PythonParser:
                     i += 1
                 
                 class_text = '\n'.join(class_lines)
-                class_name_parsed, fields, attributes, static_methods, methods, abstract_method_count = try_parse_class_block(class_text, class_name)
+                class_name_parsed, fields, attributes, static_methods, methods, properties, abstract_method_count = try_parse_class_block(class_text, class_name)
                 class_bases[class_name] = bases
                 classes.append((
                     class_name,
@@ -247,6 +248,7 @@ class PythonParser:
                     sorted(list(set(attributes)), key=lambda x: x[1]),
                     sorted(list(set(static_methods)), key=lambda x: x[1]),
                     sorted(list(set(methods)), key=lambda x: x[1]),
+                    sorted(list(set(properties)), key=lambda x: x[1]),
                     "class",
                     bases
                 ))
@@ -262,25 +264,33 @@ class PythonParser:
             "class_bases": class_bases
         }
     
-    def _process_class_def(self, node: ast.ClassDef) -> Tuple[str, List, List, List, List, int]:
+    def _process_class_def(self, node: ast.ClassDef) -> Tuple[str, List, List, List, List, List, int]:
         """Process a class definition node to extract its components."""
         try:
             class_name = node.name
             methods = []
             fields = []
             attributes = []
+            properties = []
             abstract_method_count = 0
             static_methods = []
             for body_item in node.body:
                 if isinstance(body_item, ast.FunctionDef):
                     try:
-                        prefix, method_signature, is_abstract, is_static, is_class = self._process_method_def(body_item)
-                        if is_abstract:
-                            abstract_method_count += 1
-                        if is_static or is_class:
-                            static_methods.append((prefix, method_signature))
+                        # Check if this is a property
+                        is_property = self._is_property_method(body_item)
+                        if is_property:
+                            property_info = self._process_property_method(body_item, node.body)
+                            if property_info:
+                                properties.append(property_info)
                         else:
-                            methods.append((prefix, method_signature))
+                            prefix, method_signature, is_abstract, is_static, is_class = self._process_method_def(body_item)
+                            if is_abstract:
+                                abstract_method_count += 1
+                            if is_static or is_class:
+                                static_methods.append((prefix, method_signature))
+                            else:
+                                methods.append((prefix, method_signature))
 
                         if body_item.name == '__init__':
                             fields = self._extract_fields_from_init(body_item)
@@ -304,9 +314,9 @@ class PythonParser:
                         attributes.extend(self._process_attributes(body_item))
                     except Exception as e:
                         continue
-            return class_name, fields, attributes, static_methods, methods, abstract_method_count
+            return class_name, fields, attributes, static_methods, methods, properties, abstract_method_count
         except Exception as e:
-            return "UnknownClass", [], [], [], [], 0
+            return "UnknownClass", [], [], [], [], [], 0
     
     def _process_method_def(self, body_item: ast.FunctionDef) -> Tuple[str, str, bool, bool, bool]:
         """Process a method definition node to extract its signature and properties."""
@@ -469,6 +479,76 @@ class PythonParser:
                 elif isinstance(item, ast.FunctionDef):
                     return True
             
+            return False
+        except Exception:
+            return False
+    
+    def _is_property_method(self, node: ast.FunctionDef) -> bool:
+        """Check if a method is a property (has @property decorator)."""
+        try:
+            if hasattr(node, 'decorator_list') and node.decorator_list:
+                for decorator in node.decorator_list:
+                    if isinstance(decorator, ast.Name) and decorator.id == 'property':
+                        return True
+            return False
+        except Exception:
+            return False
+    
+    def _process_property_method(self, property_node: ast.FunctionDef, class_body: List[ast.AST]) -> Optional[Tuple[str, str]]:
+        """Process a property method to determine its access level and return property info."""
+        try:
+            property_name = property_node.name
+            prefix, _ = self._visibility(property_name)
+            
+            # Check for setter and deleter methods
+            has_setter = False
+            has_deleter = False
+            
+            for body_item in class_body:
+                if isinstance(body_item, ast.FunctionDef) and body_item.name == property_name:
+                    if hasattr(body_item, 'decorator_list') and body_item.decorator_list:
+                        for decorator in body_item.decorator_list:
+                            if isinstance(decorator, ast.Attribute):
+                                if (isinstance(decorator.value, ast.Name) and 
+                                    decorator.value.id == property_name and 
+                                    decorator.attr == 'setter'):
+                                    has_setter = True
+                                elif (isinstance(decorator.value, ast.Name) and 
+                                      decorator.value.id == property_name and 
+                                      decorator.attr == 'deleter'):
+                                    has_deleter = True
+            
+            # Determine access level
+            if has_setter:
+                # Check if getter raises AttributeError (write-only property)
+                if self._getter_raises_attribute_error(property_node):
+                    access_level = "{write only}"
+                else:
+                    access_level = "{read write}"
+            else:
+                access_level = "{read only}"
+            
+            # Get return type annotation if available
+            return_type = ""
+            if property_node.returns:
+                return_type = f": {self._get_type_annotation(property_node.returns)}"
+            
+            property_signature = f"{property_name}{return_type} {access_level}"
+            return (prefix, property_signature)
+            
+        except Exception:
+            return None
+    
+    def _getter_raises_attribute_error(self, property_node: ast.FunctionDef) -> bool:
+        """Check if the property getter raises AttributeError (indicating write-only property)."""
+        try:
+            for item in property_node.body:
+                if isinstance(item, ast.Raise):
+                    if isinstance(item.exc, ast.Name) and item.exc.id == 'AttributeError':
+                        return True
+                    elif isinstance(item.exc, ast.Call) and isinstance(item.exc.func, ast.Name):
+                        if item.exc.func.id == 'AttributeError':
+                            return True
             return False
         except Exception:
             return False
@@ -708,7 +788,7 @@ class UMLGenerator:
     def _format_class_info(self, class_info: tuple) -> str:
         """Format the information of a class for UML representation."""
         try:
-            class_name, fields, attributes, static_methods, methods, class_type, bases = class_info
+            class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
             class_str = f"  {class_type} {class_name} {{\n"
             
             for prefix, field in fields:
@@ -717,8 +797,15 @@ class UMLGenerator:
                 except Exception as e:
                     continue
                     
-            if len(fields) and len(methods):
+            if len(fields) and (len(methods) or len(properties)):
                 class_str += "    ....\n"
+
+            # Process properties
+            for prefix, property_info in properties:
+                try:
+                    class_str += f"    {prefix} {property_info}\n"
+                except Exception as e:
+                    continue
 
             for prefix, method in methods:
                 try:
@@ -726,7 +813,7 @@ class UMLGenerator:
                 except Exception as e:
                     continue
 
-            if (len(fields) or len(methods)) and (len(attributes) or len(static_methods)):
+            if (len(fields) or len(methods) or len(properties)) and (len(attributes) or len(static_methods)):
                 class_str += "    __Static__\n"
 
             for prefix, attribute in attributes:
@@ -796,7 +883,7 @@ class FileAnalyzer:
             }
             
             for class_info in classes:
-                class_name, fields, attributes, static_methods, methods, class_type, bases = class_info
+                class_name, fields, attributes, static_methods, methods, properties, class_type, bases = class_info
                 
                 class_doc = None
                 if include_docs:
@@ -817,6 +904,7 @@ class FileAnalyzer:
                     'bases': bases,
                     'documentation': class_doc,
                     'fields': [],
+                    'properties': [],
                     'methods': []
                 }
                 
@@ -827,6 +915,17 @@ class FileAnalyzer:
                         'type': field.split(':')[1].strip() if ':' in field else None
                     }
                     class_data['fields'].append(field_data)
+                
+                # Process properties
+                for prefix, property_info in properties:
+                    property_name = property_info.split(':')[0].strip() if ':' in property_info else property_info.split(' ')[0]
+                    property_data = {
+                        'name': property_name,
+                        'visibility': 'public' if prefix.startswith('+') else 'private' if prefix.startswith('-') else 'protected',
+                        'signature': property_info,
+                        'access_level': self._extract_access_level(property_info)
+                    }
+                    class_data['properties'].append(property_data)
                 
                 for prefix, method in methods + static_methods:
                     method_name = method.split('(')[0]
@@ -965,6 +1064,12 @@ class FileAnalyzer:
                         if method['documentation']:
                             output.append(f"        Documentation: {method['documentation']}")
                 
+                if class_data['properties']:
+                    output.append("    Properties:")
+                    for property_item in class_data['properties']:
+                        output.append(f"      {property_item['visibility']} {property_item['signature']}")
+                        output.append(f"        Access: {property_item['access_level']}")
+                
                 if class_data['fields']:
                     output.append("    Fields:")
                     for field in class_data['fields']:
@@ -998,6 +1103,17 @@ class FileAnalyzer:
     def _format_describe_yaml(self, data: Dict[str, Any]) -> str:
         """Format data as YAML output."""
         return yaml.dump(data, default_flow_style=False, allow_unicode=True)
+    
+    def _extract_access_level(self, property_info: str) -> str:
+        """Extract access level from property info string."""
+        if '{read write}' in property_info:
+            return 'read write'
+        elif '{read only}' in property_info:
+            return 'read only'
+        elif '{write only}' in property_info:
+            return 'write only'
+        else:
+            return 'unknown'
 
 
 def main():
