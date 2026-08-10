@@ -189,12 +189,13 @@ class TestClass:
             [],  # attributes
             [],  # static_methods
             [("+", "test_method()")],  # methods
+            [],  # properties
             "class",  # class_type
             []  # bases
         )
         
         formatted = self.generator._format_class_info(class_info)
-        assert "class TestClass" in formatted
+        assert 'class "TestClass"' in formatted
         assert "+ field1" in formatted
         assert "+ test_method()" in formatted
 

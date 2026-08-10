@@ -161,7 +161,7 @@ class AbstractClass(ABC):
         assert len(classes) == 1
         class_info = classes[0]
         assert class_info[0] == "AbstractClass"  # name
-        assert class_info[5] == "abstract class"  # class_type
+        assert class_info[6] == "abstract"  # class_type
 
     def test_process_method_def_simple(self):
         """Тест обработки простого определения метода"""
@@ -277,7 +277,7 @@ class InterfaceClass:
         
         assert len(classes) == 1
         class_info = classes[0]
-        assert class_info[5] == "interface"  # class_type
+        assert class_info[6] == "interface"  # class_type
 
     def test_determine_class_type_abstract(self):
         """Тест определения типа класса как абстрактного"""
@@ -298,7 +298,7 @@ class AbstractClass(ABC):
         
         assert len(classes) == 1
         class_info = classes[0]
-        assert class_info[5] == "abstract class"  # class_type
+        assert class_info[6] == "abstract"  # class_type
 
     def test_determine_class_type_regular(self):
         """Тест определения типа класса как обычного"""
@@ -319,7 +319,7 @@ class RegularClass:
         
         assert len(classes) == 1
         class_info = classes[0]
-        assert class_info[5] == "class"  # class_type
+        assert class_info[6] == "class"  # class_type
 
     def test_format_class_info(self):
         """Тест форматирования информации о классе"""
@@ -329,12 +329,13 @@ class RegularClass:
             [],  # attributes
             [],  # static_methods
             [("+", "method()")],  # methods
+            [],  # properties
             "class",  # class_type
             []  # bases
         )
         
         formatted = self.generator._format_class_info(class_info)
-        assert "class TestClass" in formatted
+        assert 'class "TestClass"' in formatted
         assert "+ field1" in formatted
         assert "+ method()" in formatted
 

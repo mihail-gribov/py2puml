@@ -39,7 +39,7 @@ class TestClass:
         
         assert "@startuml" in uml_output
         assert "@enduml" in uml_output
-        assert "class TestClass" in uml_output
+        assert 'class "TestClass"' in uml_output
         assert "method()" in uml_output
 
     def test_plantuml_package_structure(self):
@@ -145,7 +145,7 @@ class AbstractClass(ABC):
 
         uml_output = self.generator.generate_uml()
         
-        assert "abstract class AbstractClass" in uml_output
+        assert 'abstract "AbstractClass"' in uml_output
         assert "{abstract} abstract_method()" in uml_output
         assert "concrete_method()" in uml_output
 
@@ -160,7 +160,7 @@ class InterfaceClass:
 
         uml_output = self.generator.generate_uml()
         
-        assert "interface InterfaceClass" in uml_output
+        assert 'interface "InterfaceClass"' in uml_output
 
     def test_plantuml_global_functions(self):
         """Тест глобальных функций в PlantUML"""
@@ -267,8 +267,8 @@ GLOBAL_VAR = "global"
 
         uml_output = self.generator.generate_uml()
         
-        assert "abstract class BaseClass" in uml_output
-        assert "class ConcreteClass" in uml_output
+        assert 'abstract "BaseClass"' in uml_output
+        assert 'class "ConcreteClass"' in uml_output
         assert "global_function(param: int)" in uml_output
         assert "GLOBAL_VAR" in uml_output
         assert "<|--" in uml_output  # Inheritance
