@@ -204,7 +204,7 @@ class PythonParser:
         """
         Attempt partial parsing of a file with syntax errors.
         """
-        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[List, List, List, List, List, List, int]:
+        def try_parse_class_block(class_text: str, class_name: str) -> Tuple[str, List, List, List, List, List, int]:
             try:
                 # Attempt to parse only the class
                 class_node = ast.parse(class_text)
@@ -213,7 +213,7 @@ class PythonParser:
                         return self._process_class_def(node)
             except:
                 pass
-            return [], [], [], [], [], [], 0
+            return "", [], [], [], [], [], 0
         
         # Simple heuristic for extracting classes
         lines = content.split('\n')
@@ -243,18 +243,21 @@ class PythonParser:
                     i += 1
                 
                 class_text = '\n'.join(class_lines)
-                fields, attributes, static_methods, methods, properties, abstract_method_count = try_parse_class_block(class_text, class_name)
-                class_bases[class_name] = bases
-                classes.append((
-                    class_name,
-                    sorted(list(set(fields)), key=lambda x: x[1]),
-                    sorted(list(set(attributes)), key=lambda x: x[1]),
-                    sorted(list(set(static_methods)), key=lambda x: x[1]),
-                    sorted(list(set(methods)), key=lambda x: x[1]),
-                    sorted(list(set(properties)), key=lambda x: x[1]),
-                    "class",
-                    bases
-                ))
+                _, fields, attributes, static_methods, methods, properties, abstract_method_count = try_parse_class_block(class_text, class_name)
+                # Nothing could be recovered from the broken block: skip the class
+                # instead of emitting an empty shell into the diagram
+                if fields or attributes or static_methods or methods or properties:
+                    class_bases[class_name] = bases
+                    classes.append((
+                        class_name,
+                        sorted(list(set(fields)), key=lambda x: x[1]),
+                        sorted(list(set(attributes)), key=lambda x: x[1]),
+                        sorted(list(set(static_methods)), key=lambda x: x[1]),
+                        sorted(list(set(methods)), key=lambda x: x[1]),
+                        sorted(list(set(properties)), key=lambda x: x[1]),
+                        "class",
+                        bases
+                    ))
             elif line.startswith('def '):
                 # Found function
                 func_name = line.split('def ')[1].split('(')[0].strip()
