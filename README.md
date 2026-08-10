@@ -1,10 +1,17 @@
-# py2puml - UML Generator for Python
+# py2puml — codebase structure for AI agents
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-Passing-brightgreen.svg)](tests/)
 
-**py2puml** is a powerful tool for automatic generation of UML diagrams from Python source code. The parser analyzes the structure of classes, methods, attributes, and their relationships, creating accurate PlantUML diagrams.
+**py2puml** gives an AI coding agent a map of an unfamiliar codebase. It analyzes
+Python sources and returns the structure of classes, methods, attributes and their
+relationships — as a PlantUML diagram for a human, or as JSON/YAML through an MCP
+server for an agent. Instead of reading thousands of lines to find out what talks
+to what, the agent asks for the structure once.
+
+Not related to the `py2puml` package on PyPI — this is a separate implementation
+built around agent tooling.
 
 ## 📋 Table of Contents
 
