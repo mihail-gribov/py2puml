@@ -12,62 +12,62 @@ from py2puml.core.analyzer import FileAnalyzer
 
 
 class TestFileFilter:
-    """Тесты для класса FileFilter"""
+    """Tests for the FileFilter class"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.file_filter = FileFilter(self.temp_dir)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_should_ignore_disabled(self):
-        """Тест отключенной фильтрации"""
+        """Disabled filtering"""
         file_filter = FileFilter(self.temp_dir, use_gitignore=False)
         file_path = Path(self.temp_dir) / "test.py"
         assert not file_filter.should_ignore(file_path)
 
     def test_should_ignore_without_gitignore(self):
-        """Тест фильтрации без .gitignore файла"""
+        """Filtering without a .gitignore file"""
         file_path = Path(self.temp_dir) / "test.py"
         assert not self.file_filter.should_ignore(file_path)
 
     def test_should_ignore_with_gitignore(self):
-        """Тест фильтрации с .gitignore файлом"""
-        # Создаем .gitignore файл
+        """Filtering with a .gitignore file"""
+        # Create a .gitignore file
         gitignore_path = Path(self.temp_dir) / ".gitignore"
         with open(gitignore_path, 'w') as f:
             f.write("*.pyc\n__pycache__/\n")
 
         file_filter = FileFilter(self.temp_dir, use_gitignore=True)
         
-        # Файл, который должен быть проигнорирован
+        # A file that must be ignored
         ignored_file = Path(self.temp_dir) / "test.pyc"
         assert file_filter.should_ignore(ignored_file)
         
-        # Файл, который не должен быть проигнорирован
+        # A file that must not be ignored
         normal_file = Path(self.temp_dir) / "test.py"
         assert not file_filter.should_ignore(normal_file)
 
 
 class TestPythonParser:
-    """Тесты для класса PythonParser"""
+    """Tests for the PythonParser class"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.parser = PythonParser()
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_parse_file_valid(self):
-        """Тест парсинга корректного Python файла"""
+        """Parsing a valid Python file"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -88,11 +88,11 @@ class TestClass:
         assert len(result["classes"][0][4]) == 2  # methods (__init__ + test_method)
 
     def test_parse_file_syntax_error(self):
-        """Тест парсинга файла с синтаксической ошибкой"""
+        """Parsing a file with a syntax error"""
         python_code = """
 class TestClass:
     def broken_method(self):
-        print("broken"  # Незакрытая скобка
+        print("broken"  # unclosed parenthesis
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
             f.write(python_code)
@@ -100,7 +100,7 @@ class TestClass:
 
         result = self.parser.parse_file(file_path)
         
-        # Должны получить пустые списки при синтаксической ошибке
+        # A syntax error must yield empty lists
         assert result["classes"] == []
         assert result["functions"] == []
         assert result["global_vars"] == []
@@ -108,7 +108,7 @@ class TestClass:
         assert len(self.parser.errors) > 0
 
     def test_parse_file_nonexistent(self):
-        """Тест парсинга несуществующего файла"""
+        """Parsing a missing file"""
         file_path = Path(self.temp_dir) / "nonexistent.py"
         
         result = self.parser.parse_file(file_path)
@@ -120,51 +120,51 @@ class TestClass:
         assert len(self.parser.errors) > 0
 
     def test_visibility_methods(self):
-        """Тест методов определения видимости"""
-        # Публичные
+        """Visibility detection methods"""
+        # public
         prefix, vis_type = self.parser._visibility("public_method")
         assert prefix == "+"
         assert vis_type == "public"
 
-        # Защищенные
+        # protected
         prefix, vis_type = self.parser._visibility("_protected_method")
         assert prefix == "#"
         assert vis_type == "protected"
 
-        # Приватные
+        # private
         prefix, vis_type = self.parser._visibility("__private_method")
         assert prefix == "-"
         assert vis_type == "private"
 
-        # Магические
+        # magic
         prefix, vis_type = self.parser._visibility("__init__")
         assert prefix == "~"
         assert vis_type == "private"
 
 
 class TestUMLGenerator:
-    """Тесты для класса UMLGenerator"""
+    """Tests for the UMLGenerator class"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.file_filter = FileFilter(self.temp_dir)
         self.generator = UMLGenerator(self.temp_dir, self.file_filter)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_generate_uml_empty_directory(self):
-        """Тест генерации UML для пустой директории"""
+        """UML generation for an empty directory"""
         uml_output = self.generator.generate_uml()
         assert "@startuml" in uml_output
         assert "@enduml" in uml_output
 
     def test_generate_uml_with_files(self):
-        """Тест генерации UML с файлами"""
-        # Создаем Python файл
+        """UML generation with files"""
+        # Create a Python file
         python_code = """
 class TestClass:
     def __init__(self):
@@ -182,7 +182,7 @@ class TestClass:
         assert "TestClass" in uml_output
 
     def test_format_class_info(self):
-        """Тест форматирования информации о классе"""
+        """Formatting class information"""
         class_info = (
             "TestClass",  # name
             [("+", "field1")],  # fields
@@ -200,33 +200,33 @@ class TestClass:
         assert "+ test_method()" in formatted
 
     def test_add_inheritance_relations(self):
-        """Тест добавления отношений наследования"""
+        """Adding inheritance relationships"""
         self.generator.all_class_bases = {
             "ChildClass": ["ParentClass"],
             "GrandChildClass": ["ChildClass"]
         }
         
-        # Проверяем, что UML содержит отношения наследования
+        # The UML must contain inheritance relationships
         self.generator._add_inheritance_relations()
         assert "ParentClass <|-- ChildClass" in self.generator.uml
         assert "ChildClass <|-- GrandChildClass" in self.generator.uml
 
 
 class TestFileAnalyzer:
-    """Тесты для класса FileAnalyzer"""
+    """Tests for the FileAnalyzer class"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.analyzer = FileAnalyzer(self.temp_dir)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_describe_file_text_format(self):
-        """Тест описания файла в текстовом формате"""
+        """Describing a file as text"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -245,7 +245,7 @@ class TestClass:
         assert "test_method" in result
 
     def test_describe_file_json_format(self):
-        """Тест описания файла в JSON формате"""
+        """Describing a file as JSON"""
         python_code = """
 class TestClass:
     def test_method(self):
@@ -263,7 +263,7 @@ class TestClass:
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_describe_file_yaml_format(self):
-        """Тест описания файла в YAML формате"""
+        """Describing a file as YAML"""
         python_code = """
 class TestClass:
     def test_method(self):
@@ -281,13 +281,13 @@ class TestClass:
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_describe_file_nonexistent(self):
-        """Тест описания несуществующего файла"""
+        """Describing a missing file"""
         file_path = Path(self.temp_dir) / "nonexistent.py"
         result = self.analyzer.describe_file(file_path)
         assert "Error:" in result
 
     def test_describe_file_invalid_format(self):
-        """Тест описания файла с неверным форматом"""
+        """Describing a file with an invalid format"""
         python_code = """
 class TestClass:
     pass
@@ -300,7 +300,7 @@ class TestClass:
             self.analyzer.describe_file(file_path, format='invalid')
 
     def test_get_file_summary(self):
-        """Тест получения сводки файла"""
+        """Getting a file summary"""
         python_code = """
 class TestClass:
     def test_method(self):

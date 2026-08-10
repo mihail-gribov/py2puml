@@ -8,19 +8,19 @@ from unittest.mock import patch
 
 
 class TestCLI:
-    """Интеграционные тесты для CLI интерфейса"""
+    """Integration tests for the CLI"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def run_cli_command(self, args):
-        """Запускает CLI команду"""
+        """Run a CLI command"""
         return subprocess.run([
             "py2puml"
         ] + args, capture_output=True, text=True)

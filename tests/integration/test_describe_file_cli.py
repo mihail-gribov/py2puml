@@ -8,32 +8,32 @@ from unittest.mock import patch
 
 
 class TestDescribeFileCLI:
-    """Интеграционные тесты для CLI команды describe"""
+    """Integration tests for the describe CLI command"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def run_cli_command(self, args):
-        """Запускает CLI команду"""
+        """Run a CLI command"""
         return subprocess.run([
             "py2puml"
         ] + args, capture_output=True, text=True)
 
     def create_test_file(self, content):
-        """Создает тестовый файл с заданным содержимым"""
+        """Create a test file with the given content"""
         test_file = Path(self.temp_dir) / "test.py"
         with open(test_file, 'w', encoding='utf-8') as f:
             f.write(content)
         return test_file
 
     def test_basic_describe_file_command(self):
-        """Тест базовой команды describe"""
+        """Basic describe command"""
         content = '''
 class TestClass:
     """Test class."""
@@ -58,7 +58,7 @@ TEST_VAR = "test"
         assert "test_function" in result.stdout
 
     def test_json_format(self):
-        """Тест JSON формата"""
+        """JSON output format"""
         content = '''
 class TestClass:
     """Test class."""
@@ -82,7 +82,7 @@ def test_function():
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_yaml_format(self):
-        """Тест YAML формата"""
+        """YAML output format"""
         content = '''
 class TestClass:
     """Test class."""
@@ -106,7 +106,7 @@ def test_function():
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_no_docs_flag(self):
-        """Тест флага --no-docs"""
+        """The --no-docs flag"""
         content = '''
 class TestClass:
     """This should be excluded."""
@@ -130,7 +130,7 @@ def test_function():
         assert "This should be excluded" not in result.stdout
 
     def test_combined_flags(self):
-        """Тест комбинации флагов"""
+        """Combination of flags"""
         content = '''
 class TestClass:
     """This should be excluded."""
@@ -153,18 +153,18 @@ def test_function():
         assert len(data["classes"]) == 1
 
     def test_file_not_found(self):
-        """Тест обработки несуществующего файла"""
+        """Handling a missing file"""
         non_existent_file = Path(self.temp_dir) / "non_existent.py"
 
         result = self.run_cli_command([
             "describe", str(non_existent_file)
         ])
 
-        assert result.returncode == 2  # Click возвращает 2 для ошибок валидации
+        assert result.returncode == 2  # Click returns 2 for validation errors
         assert "File" in result.stderr and "does not exist" in result.stderr
 
     def test_invalid_format(self):
-        """Тест некорректного формата"""
+        """Invalid format"""
         content = '''
 def test_function():
     pass
@@ -179,11 +179,11 @@ def test_function():
         assert "error" in result.stderr.lower()
 
     def test_syntax_error_handling(self):
-        """Тест обработки синтаксических ошибок"""
+        """Handling syntax errors"""
         content = '''
 class TestClass:
     def test_method(self):
-        # Неправильный синтаксис
+        # invalid syntax
         if True
             pass
 '''
@@ -193,12 +193,12 @@ class TestClass:
             "describe", str(file_path)
         ])
 
-        # Должен обработать ошибку gracefully
+        # Should handle the error gracefully
         assert result.returncode == 0
         assert "File:" in result.stdout
 
     def test_complex_file(self):
-        """Тест сложного файла с различными элементами"""
+        """Complex file with assorted elements"""
         content = '''
 """Module for testing complex scenarios."""
 from typing import List, Dict, Optional
@@ -271,8 +271,8 @@ ConfigDict = Dict[str, str]
         assert "create_user" in result.stdout
 
     def test_mutually_exclusive_arguments(self):
-        """Тест взаимоисключающих аргументов"""
-        # Попытка использовать describe и generate одновременно
+        """Mutually exclusive arguments"""
+        # Try to use describe and generate at the same time
         result = self.run_cli_command([
             "describe", "test.py", "generate", "directory", "output.puml"
         ])
@@ -281,30 +281,30 @@ ConfigDict = Dict[str, str]
         assert "error" in result.stderr.lower()
 
     def test_missing_required_argument(self):
-        """Тест отсутствия обязательного аргумента"""
+        """Missing required argument"""
         result = self.run_cli_command(["describe"])
 
         assert result.returncode == 2
         assert "error" in result.stderr.lower()
 
     def test_help_output(self):
-        """Тест вывода справки"""
+        """Help output"""
         result = self.run_cli_command(["describe", "--help"])
 
         assert result.returncode == 0
         assert "usage:" in result.stdout.lower()
 
     def test_encoding_handling(self):
-        """Тест обработки кодировок"""
+        """Encoding handling"""
         content = '''
 # -*- coding: utf-8 -*-
-"""Модуль с русскими комментариями."""
+"""Module with non-ASCII comments."""
 
 class ТестовыйКласс:
-    """Класс с русским названием."""
+    """Class with a Cyrillic name."""
 
     def тестовый_метод(self):
-        """Метод с русским названием."""
+        """Method with a Cyrillic name."""
         return "тест"
 '''
         file_path = self.create_test_file(content)
@@ -317,8 +317,8 @@ class ТестовыйКласс:
         assert "ТестовыйКласс" in result.stdout
 
     def test_large_file_handling(self):
-        """Тест обработки большого файла"""
-        # Создаем большой файл с множеством классов и функций
+        """Processing a large file"""
+        # Create a large file with many classes and functions
         content = []
         content.append('"""Large test file."""\n')
 

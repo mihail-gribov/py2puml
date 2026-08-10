@@ -8,20 +8,20 @@ from py2puml.core.analyzer import FileAnalyzer
 
 
 class TestDescribeFile:
-    """Тесты для функции describe_file"""
+    """Tests for the describe_file function"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.analyzer = FileAnalyzer(self.temp_dir)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_simple_file_parsing(self):
-        """Тест парсинга простого файла"""
+        """Parsing a simple file"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -41,7 +41,7 @@ class TestClass:
         assert "method" in result
 
     def test_empty_file(self):
-        """Тест пустого файла"""
+        """Empty file"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
             f.write("")
             file_path = Path(f.name)
@@ -53,7 +53,7 @@ class TestClass:
         assert "0 classes" in result
 
     def test_file_with_only_comments(self):
-        """Тест файла только с комментариями"""
+        """File containing only comments"""
         python_code = """
 # This is a comment
 # Another comment
@@ -69,7 +69,7 @@ class TestClass:
         assert "0 classes" in result
 
     def test_class_documentation_extraction(self):
-        """Тест извлечения документации класса"""
+        """Extracting a class docstring"""
         python_code = '''
 class TestClass:
     """This is a test class."""
@@ -87,7 +87,7 @@ class TestClass:
         assert "This is a test class" in result
 
     def test_function_documentation_extraction(self):
-        """Тест извлечения документации функции"""
+        """Extracting a function docstring"""
         python_code = '''
 def test_function():
     """This is a test function."""
@@ -104,11 +104,11 @@ def test_function():
         print(f"DEBUG: Contains 'This is a test function': {'This is a test function' in result}")
         
         assert "test_function" in result
-        # Документация может не извлекаться из-за ограничений парсера
+        # Docstrings may be missing because of parser limitations
         # assert "This is a test function" in result
 
     def test_various_docstring_styles(self):
-        """Тест различных стилей документации"""
+        """Different docstring styles"""
         python_code = '''
 class TestClass:
     """Google style docstring.
@@ -146,7 +146,7 @@ class TestClass:
         assert "NumPy style docstring" in result
 
     def test_json_format(self):
-        """Тест JSON формата"""
+        """JSON output format"""
         python_code = """
 class TestClass:
     def method(self):
@@ -165,7 +165,7 @@ class TestClass:
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_yaml_format(self):
-        """Тест YAML формата"""
+        """YAML output format"""
         python_code = """
 class TestClass:
     def method(self):
@@ -184,7 +184,7 @@ class TestClass:
         assert data["classes"][0]["name"] == "TestClass"
 
     def test_no_docs_flag(self):
-        """Тест флага --no-docs"""
+        """The --no-docs flag"""
         python_code = '''
 class TestClass:
     """This is a test class."""
@@ -204,7 +204,7 @@ class TestClass:
         assert "This is a test method" not in result
 
     def test_syntax_error_handling(self):
-        """Тест обработки синтаксических ошибок"""
+        """Handling syntax errors"""
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -216,11 +216,11 @@ class TestClass:
 
         result = self.analyzer.describe_file(file_path)
         
-        # Должно обработаться без ошибок
+        # Should be processed without errors
         assert "File:" in result
 
     def test_file_not_found(self):
-        """Тест обработки несуществующего файла"""
+        """Handling a missing file"""
         file_path = Path(self.temp_dir) / "nonexistent.py"
         
         result = self.analyzer.describe_file(file_path)
@@ -228,7 +228,7 @@ class TestClass:
         assert "Error:" in result
 
     def test_inheritance_classes(self):
-        """Тест классов с наследованием"""
+        """Classes with inheritance"""
         python_code = """
 class BaseClass:
     pass
@@ -250,7 +250,7 @@ class GrandChildClass(ChildClass):
         assert "GrandChildClass" in result
 
     def test_decorators(self):
-        """Тест декораторов"""
+        """Decorators"""
         python_code = """
 from functools import wraps
 
@@ -280,7 +280,7 @@ class TestClass:
         assert "static_method" in result
 
     def test_async_functions(self):
-        """Тест асинхронных функций"""
+        """Async functions"""
         python_code = """
 import asyncio
 
@@ -301,7 +301,7 @@ class TestClass:
         assert "async_method" in result
 
     def test_type_annotations(self):
-        """Тест аннотаций типов"""
+        """Type annotations"""
         python_code = """
 from typing import List, Dict, Optional
 
@@ -325,7 +325,7 @@ class TestClass:
         assert "method" in result
 
     def test_complex_signatures(self):
-        """Тест сложных сигнатур"""
+        """Complex signatures"""
         python_code = """
 def complex_function(param1: str, param2: int = 10, *args, **kwargs) -> str:
     return "complex"
@@ -344,7 +344,7 @@ class TestClass:
         assert "complex_method" in result
 
     def test_special_characters(self):
-        """Тест специальных символов"""
+        """Special characters"""
         python_code = """
 class TestClass:
     def method_with_underscores(self):
@@ -363,7 +363,7 @@ class TestClass:
         assert "method_with_dashes" in result
 
     def test_nested_classes(self):
-        """Тест вложенных классов"""
+        """Nested classes"""
         python_code = """
 class OuterClass:
     class InnerClass:
@@ -383,7 +383,7 @@ class OuterClass:
         assert "outer_method" in result
 
     def test_unsupported_format(self):
-        """Тест неподдерживаемого формата"""
+        """Unsupported format"""
         python_code = """
 class TestClass:
     pass
@@ -396,7 +396,7 @@ class TestClass:
             self.analyzer.describe_file(file_path, format='unsupported')
 
     def test_multiline_docstrings(self):
-        """Тест многострочных docstring"""
+        """Multi-line docstrings"""
         python_code = '''
 class TestClass:
     """This is a multiline docstring.

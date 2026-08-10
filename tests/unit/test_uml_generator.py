@@ -12,46 +12,46 @@ from py2puml.core.analyzer import FileAnalyzer
 
 
 class TestUMLGenerator:
-    """Тесты для класса UMLGenerator"""
+    """Tests for the UMLGenerator class"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.file_filter = FileFilter(self.temp_dir)
         self.generator = UMLGenerator(self.temp_dir, self.file_filter)
         self.parser = PythonParser()
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_visibility_public(self):
-        """Тест видимости публичных членов"""
+        """Visibility of public members"""
         prefix, vis_type = self.parser._visibility("public_method")
         assert prefix == "+"
         assert vis_type == "public"
 
     def test_visibility_protected(self):
-        """Тест видимости защищенных членов"""
+        """Visibility of protected members"""
         prefix, vis_type = self.parser._visibility("_protected_method")
         assert prefix == "#"
         assert vis_type == "protected"
 
     def test_visibility_private(self):
-        """Тест видимости приватных членов"""
+        """Visibility of private members"""
         prefix, vis_type = self.parser._visibility("__private_method")
         assert prefix == "-"
         assert vis_type == "private"
 
     def test_visibility_magic(self):
-        """Тест видимости магических методов"""
+        """Visibility of magic methods"""
         prefix, vis_type = self.parser._visibility("__init__")
         assert prefix == "~"
         assert vis_type == "private"
 
     def test_parse_python_file_valid(self):
-        """Тест парсинга корректного Python файла"""
+        """Parsing a valid Python file"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -76,11 +76,11 @@ class TestClass:
         assert len(classes[0][4]) == 2  # methods (__init__ + test_method)
 
     def test_parse_python_file_syntax_error(self):
-        """Тест парсинга файла с синтаксической ошибкой"""
+        """Parsing a file with a syntax error"""
         python_code = """
 class TestClass:
     def broken_method(self):
-        print("broken"  # Незакрытая скобка
+        print("broken"  # unclosed parenthesis
 """
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
             f.write(python_code)
@@ -92,7 +92,7 @@ class TestClass:
         global_vars = result["global_vars"]
         class_bases = result["class_bases"]
         
-        # Должны получить пустые списки при синтаксической ошибке
+        # A syntax error must yield empty lists
         assert classes == []
         assert functions == []
         assert global_vars == []
@@ -100,7 +100,7 @@ class TestClass:
         assert len(self.parser.errors) > 0
 
     def test_parse_python_file_nonexistent(self):
-        """Тест парсинга несуществующего файла"""
+        """Parsing a missing file"""
         file_path = Path(self.temp_dir) / "nonexistent.py"
         
         result = self.parser.parse_file(file_path)
@@ -116,7 +116,7 @@ class TestClass:
         assert len(self.parser.errors) > 0
 
     def test_process_class_def_simple(self):
-        """Тест обработки простого определения класса"""
+        """Processing a simple class definition"""
         python_code = """
 class SimpleClass:
     def __init__(self):
@@ -139,7 +139,7 @@ class SimpleClass:
         assert len(class_info[4]) == 2  # methods
 
     def test_process_class_def_abstract(self):
-        """Тест обработки абстрактного класса"""
+        """Processing an abstract class"""
         python_code = """
 from abc import ABC, abstractmethod
 
@@ -164,7 +164,7 @@ class AbstractClass(ABC):
         assert class_info[6] == "abstract"  # class_type
 
     def test_process_method_def_simple(self):
-        """Тест обработки простого определения метода"""
+        """Processing a simple method definition"""
         python_code = """
 class TestClass:
     def simple_method(self, param1, param2):
@@ -184,7 +184,7 @@ class TestClass:
         assert "simple_method" in methods[0][1]  # method signature
 
     def test_process_method_def_static(self):
-        """Тест обработки статического метода"""
+        """Processing a static method"""
         python_code = """
 class TestClass:
     @staticmethod
@@ -205,7 +205,7 @@ class TestClass:
         assert "static_method" in static_methods[0][1]  # method signature
 
     def test_get_type_annotation_simple(self):
-        """Тест получения простой аннотации типа"""
+        """Reading a simple type annotation"""
         python_code = """
 class TestClass:
     field: str = "value"
@@ -223,7 +223,7 @@ class TestClass:
         assert len(attributes) == 1
 
     def test_get_type_annotation_complex(self):
-        """Тест получения сложной аннотации типа"""
+        """Reading a complex type annotation"""
         python_code = """
 from typing import List, Dict
 
@@ -243,7 +243,7 @@ class TestClass:
         assert len(attributes) == 1
 
     def test_extract_fields_from_init(self):
-        """Тест извлечения полей из __init__"""
+        """Extracting fields from __init__"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -263,7 +263,7 @@ class TestClass:
         assert len(fields) == 2
 
     def test_determine_class_type_interface(self):
-        """Тест определения типа класса как интерфейса"""
+        """Detecting an interface class type"""
         python_code = """
 class InterfaceClass:
     pass
@@ -280,7 +280,7 @@ class InterfaceClass:
         assert class_info[6] == "interface"  # class_type
 
     def test_determine_class_type_abstract(self):
-        """Тест определения типа класса как абстрактного"""
+        """Detecting an abstract class type"""
         python_code = """
 from abc import ABC, abstractmethod
 
@@ -301,7 +301,7 @@ class AbstractClass(ABC):
         assert class_info[6] == "abstract"  # class_type
 
     def test_determine_class_type_regular(self):
-        """Тест определения типа класса как обычного"""
+        """Detecting a regular class type"""
         python_code = """
 class RegularClass:
     def __init__(self):
@@ -322,7 +322,7 @@ class RegularClass:
         assert class_info[6] == "class"  # class_type
 
     def test_format_class_info(self):
-        """Тест форматирования информации о классе"""
+        """Formatting class information"""
         class_info = (
             "TestClass",  # name
             [("+", "field1")],  # fields
@@ -340,7 +340,7 @@ class RegularClass:
         assert "+ method()" in formatted
 
     def test_process_global_vars(self):
-        """Тест обработки глобальных переменных"""
+        """Processing global variables"""
         python_code = """
 GLOBAL_VAR = "value"
 ANOTHER_VAR = 42
@@ -358,7 +358,7 @@ ANOTHER_VAR = 42
         assert "ANOTHER_VAR" in var_names
 
     def test_process_function_def(self):
-        """Тест обработки определения функции"""
+        """Processing a function definition"""
         python_code = """
 def global_function(param1, param2):
     return param1 + param2
@@ -374,14 +374,14 @@ def global_function(param1, param2):
         assert "global_function" in functions[0]
 
     def test_files_with_errors_initialization(self):
-        """Тест инициализации списка ошибок"""
+        """Error list initialisation"""
         assert hasattr(self.parser, 'errors')
         assert hasattr(self.parser, 'files_with_errors')
         assert isinstance(self.parser.errors, list)
         assert isinstance(self.parser.files_with_errors, dict)
 
     def test_files_with_errors_syntax_error(self):
-        """Тест обработки синтаксических ошибок"""
+        """Handling syntax errors"""
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -397,34 +397,34 @@ class TestClass:
         assert str(file_path) in self.parser.files_with_errors
 
     def test_files_with_errors_permission_error(self):
-        """Тест обработки ошибок доступа"""
-        # Создаем файл без прав на чтение
+        """Handling permission errors"""
+        # Create a file that cannot be read
         file_path = Path(self.temp_dir) / "no_access.py"
         with open(file_path, 'w') as f:
             f.write("class Test: pass")
         
-        # Убираем права на чтение
+        # Drop read permissions
         os.chmod(file_path, 0o000)
         
         try:
             result = self.parser.parse_file(file_path)
             assert len(self.parser.errors) > 0
         finally:
-            # Восстанавливаем права
+            # Restore permissions
             os.chmod(file_path, 0o644)
 
     def test_files_with_errors_encoding_error(self):
-        """Тест обработки ошибок кодировки"""
-        # Создаем файл с неправильной кодировкой
+        """Handling encoding errors"""
+        # Create a file with an invalid encoding
         file_path = Path(self.temp_dir) / "bad_encoding.py"
         with open(file_path, 'wb') as f:
-            f.write(b'\xff\xfe\x00\x00')  # Неправильная кодировка
+            f.write(b'\xff\xfe\x00\x00')  # invalid encoding
         
         result = self.parser.parse_file(file_path)
         assert len(self.parser.errors) > 0
 
     def test_files_with_errors_multiple_errors(self):
-        """Тест обработки множественных ошибок"""
+        """Handling multiple errors"""
         python_code = """
 class TestClass:
     def method1(self:
@@ -444,8 +444,8 @@ class TestClass:
         assert len(self.parser.files_with_errors[str(file_path)]) > 0
 
     def test_generate_uml_with_error_files(self):
-        """Тест генерации UML с файлами с ошибками"""
-        # Создаем файл с ошибкой
+        """UML generation with files containing errors"""
+        # Create a file containing an error
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -461,8 +461,8 @@ class TestClass:
         assert len(self.generator.errors) > 0
 
     def test_generate_uml_error_files_visual_representation(self):
-        """Тест визуального представления файлов с ошибками"""
-        # Создаем файл с ошибкой
+        """Visual representation of files with errors"""
+        # Create a file containing an error
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -473,12 +473,12 @@ class TestClass:
 
         uml_output = self.generator.generate_uml()
         
-        # Проверяем, что файл с ошибкой отмечен красным цветом
+        # A file with errors must be marked red
         assert "#FF0000" in uml_output
-        assert "note right : Ошибки:" in uml_output
+        assert "note right : Errors:" in uml_output
 
     def test_files_with_errors_empty_after_clean_parse(self):
-        """Тест пустых ошибок после чистого парсинга"""
+        """No errors after a clean parse"""
         python_code = """
 class TestClass:
     def method(self):
@@ -489,12 +489,12 @@ class TestClass:
 
         result = self.parser.parse_file(Path(f.name))
         
-        # После чистого парсинга ошибок быть не должно
+        # A clean parse must leave no errors
         assert len(self.parser.errors) == 0
         assert len(self.parser.files_with_errors) == 0
 
     def test_files_with_errors_backward_compatibility(self):
-        """Тест обратной совместимости с ошибками"""
+        """Backward compatibility of error reporting"""
         python_code = """
 class TestClass:
     def method(self):
@@ -505,7 +505,7 @@ class TestClass:
 
         result = self.parser.parse_file(Path(f.name))
         
-        # Проверяем, что структура результата совместима
+        # The result structure must stay compatible
         assert "classes" in result
         assert "functions" in result
         assert "global_vars" in result

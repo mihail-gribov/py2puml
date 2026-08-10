@@ -11,10 +11,10 @@ from py2puml.core.analyzer import FileAnalyzer
 
 
 class TestEdgeCases:
-    """Тесты для граничных случаев"""
+    """Tests for edge cases"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.file_filter = FileFilter(self.temp_dir)
         self.generator = UMLGenerator(self.temp_dir, self.file_filter)
@@ -22,12 +22,12 @@ class TestEdgeCases:
         self.analyzer = FileAnalyzer(self.temp_dir)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_empty_file(self):
-        """Тест пустого файла"""
+        """Empty file"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', dir=self.temp_dir, delete=False) as f:
             f.write("")
             file_path = Path(f.name)
@@ -38,7 +38,7 @@ class TestEdgeCases:
         assert result["global_vars"] == []
 
     def test_file_with_only_comments(self):
-        """Тест файла только с комментариями"""
+        """File containing only comments"""
         python_code = """
 # This is a comment
 # Another comment
@@ -53,7 +53,7 @@ class TestEdgeCases:
         assert result["global_vars"] == []
 
     def test_file_with_only_whitespace(self):
-        """Тест файла только с пробелами"""
+        """File containing only whitespace"""
         python_code = """
     
     
@@ -68,7 +68,7 @@ class TestEdgeCases:
         assert result["global_vars"] == []
 
     def test_file_with_unicode_characters(self):
-        """Тест файла с Unicode символами"""
+        """File with Unicode identifiers"""
         python_code = """
 class ТестКласс:
     def метод(self):
@@ -83,7 +83,7 @@ class ТестКласс:
         assert result["classes"][0][0] == "ТестКласс"
 
     def test_file_with_special_characters_in_names(self):
-        """Тест файла со специальными символами в именах"""
+        """File with special characters in names"""
         python_code = """
 class TestClass_123:
     def method_with_underscores(self):
@@ -101,7 +101,7 @@ class TestClass_123:
         assert result["classes"][0][0] == "TestClass_123"
 
     def test_file_with_very_long_names(self):
-        """Тест файла с очень длинными именами"""
+        """File with very long names"""
         long_name = "A" * 1000
         python_code = f"""
 class {long_name}:
@@ -117,7 +117,7 @@ class {long_name}:
         assert result["classes"][0][0] == long_name
 
     def test_file_with_nested_classes(self):
-        """Тест файла с вложенными классами"""
+        """File with nested classes"""
         python_code = """
 class OuterClass:
     class InnerClass:
@@ -136,7 +136,7 @@ class OuterClass:
         assert result["classes"][0][0] == "OuterClass"
 
     def test_file_with_multiple_inheritance(self):
-        """Тест файла с множественным наследованием"""
+        """File with multiple inheritance"""
         python_code = """
 class Base1:
     pass
@@ -155,7 +155,7 @@ class Child(Base1, Base2):
         assert len(result["classes"]) == 3
 
     def test_file_with_complex_decorators(self):
-        """Тест файла со сложными декораторами"""
+        """File with complex decorators"""
         python_code = """
 def decorator1(func):
     return func
@@ -178,7 +178,7 @@ def decorated_function():
         assert len(result["functions"]) == 1
 
     def test_file_with_async_await(self):
-        """Тест файла с async/await"""
+        """File using async/await"""
         python_code = """
 import asyncio
 
@@ -200,7 +200,7 @@ class TestClass:
         assert len(result["classes"]) == 1
 
     def test_file_with_type_annotations(self):
-        """Тест файла с аннотациями типов"""
+        """File with type annotations"""
         python_code = """
 from typing import List, Dict, Optional, Union, Tuple
 
@@ -222,7 +222,7 @@ class TestClass:
         assert len(result["classes"]) == 1
 
     def test_file_with_f_strings(self):
-        """Тест файла с f-строками"""
+        """File using f-strings"""
         python_code = """
 name = "World"
 greeting = f"Hello, {name}!"
@@ -239,7 +239,7 @@ class TestClass:
         assert len(result["classes"]) == 1
 
     def test_file_with_walrus_operator(self):
-        """Тест файла с оператором walrus (:=)"""
+        """File using the walrus operator (:=)"""
         python_code = """
 def test_walrus():
     if (n := len([1, 2, 3])) > 2:
@@ -254,7 +254,7 @@ def test_walrus():
         assert len(result["functions"]) == 1
 
     def test_file_with_match_statement(self):
-        """Тест файла с match statement (Python 3.10+)"""
+        """File using a match statement (Python 3.10+)"""
         python_code = """
 def test_match(value):
     match value:
@@ -273,8 +273,8 @@ def test_match(value):
         assert len(result["functions"]) == 1
 
     def test_file_with_very_large_content(self):
-        """Тест файла с очень большим содержимым"""
-        # Создаем большой файл
+        """File with very large content"""
+        # Create a large file
         large_content = "class TestClass:\n"
         for i in range(1000):
             large_content += f"    def method_{i}(self):\n        return {i}\n"
@@ -285,10 +285,10 @@ def test_match(value):
 
         result = self.parser.parse_file(file_path)
         assert len(result["classes"]) == 1
-        assert len(result["classes"][0][4]) == 1000  # 1000 методов
+        assert len(result["classes"][0][4]) == 1000  # 1000 methods
 
     def test_file_with_mixed_encodings(self):
-        """Тест файла со смешанными кодировками"""
+        """File with mixed encodings"""
         python_code = """
 # -*- coding: utf-8 -*-
 class TestClass:
@@ -303,7 +303,7 @@ class TestClass:
         assert len(result["classes"]) == 1
 
     def test_file_with_syntax_errors(self):
-        """Тест файла с синтаксическими ошибками"""
+        """File with syntax errors"""
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -318,7 +318,7 @@ class TestClass:
         assert len(self.parser.errors) > 0
 
     def test_file_with_import_errors(self):
-        """Тест файла с ошибками импорта"""
+        """File with import errors"""
         python_code = """
 from nonexistent_module import nonexistent_function
 
@@ -333,8 +333,8 @@ class TestClass:
         assert len(result["classes"]) == 1
 
     def test_file_with_circular_imports(self):
-        """Тест файла с циклическими импортами"""
-        # Создаем два файла с циклическими импортами
+        """File with circular imports"""
+        # Create two files with circular imports
         file1_content = """
 from test_file2 import ClassB
 
@@ -364,42 +364,42 @@ class ClassB:
         assert len(result2["classes"]) == 1
 
     def test_file_with_unicode_errors(self):
-        """Тест файла с ошибками Unicode"""
-        # Создаем файл с неправильной кодировкой
+        """File with Unicode errors"""
+        # Create a file with an invalid encoding
         with tempfile.NamedTemporaryFile(mode='wb', suffix='.py', dir=self.temp_dir, delete=False) as f:
-            f.write(b'\xff\xfe\x00\x00')  # Неправильная кодировка
+            f.write(b'\xff\xfe\x00\x00')  # invalid encoding
             file_path = Path(f.name)
 
         result = self.parser.parse_file(file_path)
         assert len(self.parser.errors) > 0
 
     def test_file_with_permission_errors(self):
-        """Тест файла с ошибками доступа"""
-        # Создаем файл без прав на чтение
+        """File with permission errors"""
+        # Create a file that cannot be read
         file_path = Path(self.temp_dir) / "no_access.py"
         with open(file_path, 'w') as f:
             f.write("class Test: pass")
         
-        # Убираем права на чтение
+        # Drop read permissions
         os.chmod(file_path, 0o000)
         
         try:
             result = self.parser.parse_file(file_path)
             assert len(self.parser.errors) > 0
         finally:
-            # Восстанавливаем права
+            # Restore permissions
             os.chmod(file_path, 0o644)
 
     def test_empty_directory(self):
-        """Тест пустой директории"""
+        """Empty directory"""
         uml_output = self.generator.generate_uml()
         assert "@startuml" in uml_output
         assert "@enduml" in uml_output
-        assert "note right : Директория пуста" in uml_output
+        assert "note right : Directory is empty" in uml_output
 
     def test_directory_with_only_non_python_files(self):
-        """Тест директории только с не-Python файлами"""
-        # Создаем не-Python файлы
+        """Directory with non-Python files only"""
+        # Create non-Python files
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', dir=self.temp_dir, delete=False) as f:
             f.write("This is a text file")
 
@@ -409,37 +409,37 @@ class ClassB:
         uml_output = self.generator.generate_uml()
         assert "@startuml" in uml_output
         assert "@enduml" in uml_output
-        assert "note right : Директория пуста" in uml_output
+        assert "note right : Directory is empty" in uml_output
 
     def test_directory_with_hidden_files(self):
-        """Тест директории со скрытыми файлами"""
-        # Создаем скрытый Python файл
+        """Directory with hidden files"""
+        # Create a hidden Python file
         hidden_file = Path(self.temp_dir) / ".hidden.py"
         with open(hidden_file, 'w') as f:
             f.write("class HiddenClass: pass")
 
-        # Создаем обычный Python файл
+        # Create a regular Python file
         normal_file = Path(self.temp_dir) / "normal.py"
         with open(normal_file, 'w') as f:
             f.write("class NormalClass: pass")
 
         uml_output = self.generator.generate_uml()
         assert "NormalClass" in uml_output
-        assert "HiddenClass" not in uml_output  # Скрытые файлы игнорируются
+        assert "HiddenClass" not in uml_output  # hidden files are ignored
 
     def test_directory_with_symlinks(self):
-        """Тест директории с символическими ссылками"""
-        # Создаем оригинальный файл
+        """Directory with symbolic links"""
+        # Create the original file
         original_file = Path(self.temp_dir) / "original.py"
         with open(original_file, 'w') as f:
             f.write("class OriginalClass: pass")
 
-        # Создаем символическую ссылку
+        # Create a symbolic link
         symlink_file = Path(self.temp_dir) / "symlink.py"
         try:
             symlink_file.symlink_to(original_file)
         except OSError:
-            # На некоторых системах символические ссылки могут не поддерживаться
+            # Symlinks may be unsupported on some systems
             pytest.skip("Symbolic links not supported on this system")
 
         uml_output = self.generator.generate_uml()

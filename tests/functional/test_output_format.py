@@ -9,21 +9,21 @@ from py2puml.core.generator import UMLGenerator
 
 
 class TestOutputFormat:
-    """Тесты для форматов вывода"""
+    """Tests for output formats"""
 
     def setup_method(self):
-        """Настройка перед каждым тестом"""
+        """Set up before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.file_filter = FileFilter(self.temp_dir)
         self.generator = UMLGenerator(self.temp_dir, self.file_filter)
 
     def teardown_method(self):
-        """Очистка после каждого теста"""
+        """Clean up after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_plantuml_format_generation(self):
-        """Тест генерации PlantUML формата"""
+        """PlantUML format generation"""
         python_code = """
 class TestClass:
     def __init__(self):
@@ -150,7 +150,7 @@ class AbstractClass(ABC):
         assert "concrete_method()" in uml_output
 
     def test_plantuml_interfaces(self):
-        """Тест интерфейсов в PlantUML"""
+        """Interfaces in PlantUML"""
         python_code = """
 class InterfaceClass:
     pass
@@ -163,7 +163,7 @@ class InterfaceClass:
         assert 'interface "InterfaceClass"' in uml_output
 
     def test_plantuml_global_functions(self):
-        """Тест глобальных функций в PlantUML"""
+        """Global functions in PlantUML"""
         python_code = """
 def global_function():
     return "global"
@@ -181,7 +181,7 @@ class TestClass:
         assert "TestClass" in uml_output
 
     def test_plantuml_global_variables(self):
-        """Тест глобальных переменных в PlantUML"""
+        """Global variables in PlantUML"""
         python_code = """
 GLOBAL_VAR = "value"
 ANOTHER_VAR = 42
@@ -198,7 +198,7 @@ class TestClass:
         assert "ANOTHER_VAR" in uml_output
 
     def test_plantuml_error_handling(self):
-        """Тест обработки ошибок в PlantUML"""
+        """Error handling in PlantUML"""
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -214,7 +214,7 @@ class TestClass:
         assert len(self.generator.errors) > 0
 
     def test_plantuml_error_visualization(self):
-        """Тест визуализации ошибок в PlantUML"""
+        """Error visualisation in PlantUML"""
         python_code = """
 class TestClass:
     def broken_method(self:
@@ -227,7 +227,7 @@ class TestClass:
         
         # Check red color for files with errors
         assert "#FF0000" in uml_output
-        assert "note right : Ошибки:" in uml_output
+        assert "note right : Errors:" in uml_output
 
     def test_plantuml_complex_structure(self):
         """Test complex structure in PlantUML"""
@@ -279,7 +279,7 @@ GLOBAL_VAR = "global"
         
         assert "@startuml" in uml_output
         assert "@enduml" in uml_output
-        assert "note right : Директория пуста" in uml_output
+        assert "note right : Directory is empty" in uml_output
 
     def test_plantuml_gitignore_filtering(self):
         """Test .gitignore filtering in PlantUML"""
@@ -326,7 +326,7 @@ class TestClass:
         assert "method()" in uml_output
 
     def test_plantuml_special_characters(self):
-        """Тест специальных символов в PlantUML"""
+        """Special characters in PlantUML"""
         python_code = """
 class TestClass:
     def method_with_underscores(self):
