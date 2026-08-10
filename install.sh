@@ -128,16 +128,6 @@ configure_cursor() {
     cat > "$cursor_config_dir/mcp.json" << EOF
 {
     "mcpServers": {
-        "context7": {
-            "url": "https://mcp.context7.com/mcp"
-        },
-        "how_to_do": {
-            "transport": "stdio",
-            "command": "python3",
-            "args": [
-                "/home/mike/.cursor/tools/how_to_do.py"
-            ]
-        },
         "py-analyzer": {
             "command": "python3",
             "args": ["$(pwd)/mcp_file_analyzer.py"],
