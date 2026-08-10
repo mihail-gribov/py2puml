@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Продвинутые примеры классов для демонстрации системы форматирования.
+Advanced class examples for the formatting system.
 """
 
 from abc import ABC, abstractmethod
@@ -9,9 +9,9 @@ from typing import Dict, List, Optional, Union
 from enum import Enum
 
 
-# 1. Перечисление (enum) - будет отображаться как обычный класс
+# 1. Enum - rendered as a regular class
 class Status(Enum):
-    """Статусы заказа."""
+    """Order statuses."""
     PENDING = "pending"
     PROCESSING = "processing"
     SHIPPED = "shipped"
@@ -19,35 +19,35 @@ class Status(Enum):
     CANCELLED = "cancelled"
 
 
-# 2. Абстрактный класс с множественными абстрактными методами
+# 2. Abstract class with several abstract methods
 class AbstractRepository(ABC):
-    """Абстрактный репозиторий для работы с данными."""
+    """Abstract repository for data access."""
     
     @abstractmethod
     def save(self, entity) -> None:
-        """Сохранить сущность."""
+        """Store an entity."""
         pass
     
     @abstractmethod
     def find_by_id(self, entity_id: str):
-        """Найти сущность по ID."""
+        """Find an entity by ID."""
         pass
     
     @abstractmethod
     def delete(self, entity_id: str) -> bool:
-        """Удалить сущность."""
+        """Delete an entity."""
         pass
     
     @abstractmethod
     def find_all(self) -> List:
-        """Найти все сущности."""
+        """Find all entities."""
         pass
 
 
-# 3. Сложный датакласс с полями по умолчанию
+# 3. Complex dataclass with default field values
 @dataclass
 class Order:
-    """Заказ в системе."""
+    """An order in the system."""
     order_id: str
     customer_name: str
     items: List[Dict[str, Union[str, int, float]]] = field(default_factory=list)
@@ -56,7 +56,7 @@ class Order:
     created_at: Optional[str] = None
     
     def add_item(self, name: str, quantity: int, price: float) -> None:
-        """Добавить товар в заказ."""
+        """Add an item to the order."""
         item = {
             "name": name,
             "quantity": quantity,
@@ -67,17 +67,17 @@ class Order:
         self.total_amount += item["total"]
     
     def get_item_count(self) -> int:
-        """Получить количество товаров."""
+        """Return the number of items."""
         return len(self.items)
     
     def is_empty(self) -> bool:
-        """Проверить, пустой ли заказ."""
+        """Check whether the order is empty."""
         return len(self.items) == 0
 
 
-# 4. Обычный класс с множественным наследованием
+# 4. Regular class with multiple inheritance
 class BaseEntity:
-    """Базовый класс для всех сущностей."""
+    """Base class for all entities."""
     
     def __init__(self, entity_id: str):
         self.entity_id = entity_id
@@ -85,21 +85,21 @@ class BaseEntity:
         self.updated_at = None
     
     def get_id(self) -> str:
-        """Получить ID сущности."""
+        """Return the entity ID."""
         return self.entity_id
 
 
 class TimestampMixin:
-    """Миксин для работы с временными метками."""
+    """Mixin that maintains timestamps."""
     
     def update_timestamp(self) -> None:
-        """Обновить временную метку."""
+        """Update the timestamp."""
         from datetime import datetime
         self.updated_at = datetime.now()
 
 
 class EntityWithTimestamps(BaseEntity, TimestampMixin):
-    """Сущность с временными метками."""
+    """Entity carrying timestamps."""
     
     def __init__(self, entity_id: str, name: str):
         super().__init__(entity_id)
@@ -107,48 +107,48 @@ class EntityWithTimestamps(BaseEntity, TimestampMixin):
         self.update_timestamp()
     
     def get_name(self) -> str:
-        """Получить имя сущности."""
+        """Return the entity name."""
         return self.name
 
 
-# 5. Интерфейс для валидации
+# 5. Validation interface
 class Validator:
-    """Интерфейс для валидации данных."""
+    """Interface for data validation."""
     pass
 
 
-# 6. Конкретная реализация абстрактного репозитория
+# 6. Concrete implementation of an abstract repository
 class InMemoryRepository(AbstractRepository):
-    """Реализация репозитория в памяти."""
+    """In-memory repository implementation."""
     
     def __init__(self):
         self._storage: Dict[str, any] = {}
     
     def save(self, entity) -> None:
-        """Сохранить сущность в памяти."""
+        """Store an entity in memory."""
         if hasattr(entity, 'entity_id'):
             self._storage[entity.entity_id] = entity
     
     def find_by_id(self, entity_id: str):
-        """Найти сущность по ID."""
+        """Find an entity by ID."""
         return self._storage.get(entity_id)
     
     def delete(self, entity_id: str) -> bool:
-        """Удалить сущность."""
+        """Delete an entity."""
         if entity_id in self._storage:
             del self._storage[entity_id]
             return True
         return False
     
     def find_all(self) -> List:
-        """Найти все сущности."""
+        """Find all entities."""
         return list(self._storage.values())
 
 
-# 7. Еще один датакласс с вложенными структурами
+# 7. Another dataclass with nested structures
 @dataclass
 class Address:
-    """Адрес."""
+    """Postal address."""
     street: str
     city: str
     postal_code: str
@@ -157,7 +157,7 @@ class Address:
 
 @dataclass
 class Customer:
-    """Клиент с адресом."""
+    """Customer with an address."""
     customer_id: str
     name: str
     email: str
@@ -166,17 +166,17 @@ class Customer:
     is_vip: bool = False
     
     def get_full_address(self) -> str:
-        """Получить полный адрес."""
+        """Return the full address."""
         return f"{self.address.street}, {self.address.city}, {self.address.postal_code}, {self.address.country}"
     
     def is_local(self) -> bool:
-        """Проверить, является ли клиент местным."""
+        """Check whether the customer is local."""
         return self.address.country == "Russia"
 
 
-# 8. Абстрактный класс с конкретными методами
+# 8. Abstract class with concrete methods
 class AbstractPaymentProcessor(ABC):
-    """Абстрактный процессор платежей."""
+    """Abstract payment processor."""
     
     def __init__(self, api_key: str):
         self.api_key = api_key
@@ -184,49 +184,49 @@ class AbstractPaymentProcessor(ABC):
     
     @abstractmethod
     def process_payment(self, amount: float, currency: str) -> bool:
-        """Обработать платеж."""
+        """Process a payment."""
         pass
     
     @abstractmethod
     def refund_payment(self, transaction_id: str) -> bool:
-        """Вернуть платеж."""
+        """Refund a payment."""
         pass
     
     def is_ready(self) -> bool:
-        """Проверить готовность процессора."""
+        """Check whether the processor is ready."""
         return self.is_configured
 
 
-# 9. Обычный класс с декораторами методов
+# 9. Regular class with decorated methods
 class Logger:
-    """Логгер для приложения."""
+    """Application logger."""
     
     def __init__(self, name: str):
         self.name = name
         self.logs: List[str] = []
     
     def info(self, message: str) -> None:
-        """Логировать информационное сообщение."""
+        """Log an informational message."""
         log_entry = f"[INFO] {self.name}: {message}"
         self.logs.append(log_entry)
         print(log_entry)
     
     def error(self, message: str) -> None:
-        """Логировать ошибку."""
+        """Log an error."""
         log_entry = f"[ERROR] {self.name}: {message}"
         self.logs.append(log_entry)
         print(log_entry)
     
     def get_logs(self) -> List[str]:
-        """Получить все логи."""
+        """Return every log entry."""
         return self.logs.copy()
     
     def clear_logs(self) -> None:
-        """Очистить логи."""
+        """Clear the logs."""
         self.logs.clear()
 
 
-# 10. Интерфейс для конфигурации
+# 10. Configuration interface
 class ConfigProvider:
-    """Провайдер конфигурации."""
+    """Configuration provider."""
     pass

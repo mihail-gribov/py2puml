@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Примеры различных типов классов для демонстрации новой системы форматирования.
+Sample classes of every kind, used to demonstrate the formatting system.
 """
 
 from abc import ABC, abstractmethod
@@ -8,162 +8,162 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 
-# 1. Обычный класс - будет отображаться как "class" со стандартным цветом
+# 1. Regular class - rendered as "class" with the default colour
 class RegularClass:
-    """Обычный класс без специальных декораторов."""
+    """Regular class without special decorators."""
     
     def __init__(self, name: str, value: int):
         self.name = name
         self.value = value
     
     def get_name(self) -> str:
-        """Получить имя."""
+        """Return the name."""
         return self.name
     
     def get_value(self) -> int:
-        """Получить значение."""
+        """Return the value."""
         return self.value
     
     def set_value(self, new_value: int) -> None:
-        """Установить новое значение."""
+        """Set a new value."""
         self.value = new_value
 
 
-# 2. Абстрактный класс - будет отображаться как "abstract" с белым цветом
+# 2. Abstract class - rendered as "abstract" with a white background
 class AbstractShape(ABC):
-    """Абстрактный базовый класс для геометрических фигур."""
+    """Abstract base class for geometric shapes."""
     
     def __init__(self, color: str):
         self.color = color
     
     @abstractmethod
     def area(self) -> float:
-        """Вычислить площадь фигуры."""
+        """Compute the area of the shape."""
         pass
     
     @abstractmethod
     def perimeter(self) -> float:
-        """Вычислить периметр фигуры."""
+        """Compute the perimeter of the shape."""
         pass
     
     def get_color(self) -> str:
-        """Получить цвет фигуры."""
+        """Return the colour of the shape."""
         return self.color
 
 
-# 3. Датакласс - будет отображаться как "class" с зеленым цветом
+# 3. Dataclass - rendered as "class" with a green background
 @dataclass
 class User:
-    """Пользователь системы - датакласс."""
+    """System user - a dataclass."""
     name: str
     email: str
     age: int
     is_active: bool = True
     
     def get_display_name(self) -> str:
-        """Получить отображаемое имя."""
+        """Return the display name."""
         return f"{self.name} ({self.email})"
     
     def is_adult(self) -> bool:
-        """Проверить, является ли пользователь совершеннолетним."""
+        """Check whether the user is an adult."""
         return self.age >= 18
 
 
-# 4. Еще один датакласс с дополнительными параметрами
+# 4. Another dataclass with extra parameters
 @dataclass(frozen=True)
 class Point:
-    """Неизменяемая точка в 2D пространстве."""
+    """Immutable point in 2D space."""
     x: float
     y: float
     
     def distance_to_origin(self) -> float:
-        """Вычислить расстояние до начала координат."""
+        """Compute the distance to the origin."""
         return (self.x ** 2 + self.y ** 2) ** 0.5
 
 
-# 5. Интерфейс (класс без методов) - будет отображаться как "interface" с белым цветом
+# 5. Interface (a class without methods) - rendered as "interface" with a white background
 class DatabaseConnection:
-    """Интерфейс для подключения к базе данных."""
+    """Interface for database connections."""
     pass
 
 
-# 6. Конкретная реализация абстрактного класса
+# 6. Concrete implementation of an abstract class
 class Circle(AbstractShape):
-    """Круг - реализация абстрактного класса AbstractShape."""
+    """Circle - an AbstractShape implementation."""
     
     def __init__(self, color: str, radius: float):
         super().__init__(color)
         self.radius = radius
     
     def area(self) -> float:
-        """Вычислить площадь круга."""
+        """Compute the area of the circle."""
         return 3.14159 * self.radius ** 2
     
     def perimeter(self) -> float:
-        """Вычислить периметр круга."""
+        """Compute the perimeter of the circle."""
         return 2 * 3.14159 * self.radius
 
 
-# 7. Еще один обычный класс
+# 7. Another regular class
 class Calculator:
-    """Простой калькулятор."""
+    """Simple calculator."""
     
     def __init__(self):
         self.history: List[str] = []
     
     def add(self, a: float, b: float) -> float:
-        """Сложение."""
+        """Addition."""
         result = a + b
         self.history.append(f"{a} + {b} = {result}")
         return result
     
     def multiply(self, a: float, b: float) -> float:
-        """Умножение."""
+        """Multiplication."""
         result = a * b
         self.history.append(f"{a} * {b} = {result}")
         return result
     
     def get_history(self) -> List[str]:
-        """Получить историю операций."""
+        """Return the operation history."""
         return self.history.copy()
 
 
-# 8. Класс с множественным наследованием
+# 8. Class with multiple inheritance
 class Square(AbstractShape):
-    """Квадрат - еще одна реализация AbstractShape."""
+    """Square - another AbstractShape implementation."""
     
     def __init__(self, color: str, side: float):
         super().__init__(color)
         self.side = side
     
     def area(self) -> float:
-        """Вычислить площадь квадрата."""
+        """Compute the area of the square."""
         return self.side ** 2
     
     def perimeter(self) -> float:
-        """Вычислить периметр квадрата."""
+        """Compute the perimeter of the square."""
         return 4 * self.side
 
 
-# 9. Еще один датакласс с методами
+# 9. Another dataclass with methods
 @dataclass
 class Product:
-    """Товар в магазине."""
+    """Product in the shop."""
     name: str
     price: float
     category: str
     in_stock: bool = True
     
     def get_formatted_price(self) -> str:
-        """Получить отформатированную цену."""
+        """Return the formatted price."""
         return f"${self.price:.2f}"
     
     def is_expensive(self, threshold: float = 100.0) -> bool:
-        """Проверить, является ли товар дорогим."""
+        """Check whether the product is expensive."""
         return self.price > threshold
 
 
-# 10. Интерфейс для сервисов
+# 10. Service interface
 class NotificationService:
-    """Интерфейс для сервиса уведомлений."""
+    """Interface for a notification service."""
     pass

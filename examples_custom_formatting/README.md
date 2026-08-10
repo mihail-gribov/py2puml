@@ -1,80 +1,81 @@
-# Примеры кастомизированного форматирования классов
+# Custom class formatting examples
 
-Эта директория содержит примеры различных типов классов для демонстрации новой системы форматирования в py2puml.
+This directory holds sample classes of every kind supported by the py2puml
+formatting system.
 
-## Файлы с примерами
+## Example files
 
 ### 1. `sample_classes.py`
-Базовые примеры различных типов классов:
-- **RegularClass** - обычный класс (стандартный цвет)
-- **AbstractShape** - абстрактный класс (белый цвет)
-- **User** - датакласс (зеленый цвет)
-- **Point** - замороженный датакласс (зеленый цвет)
-- **DatabaseConnection** - интерфейс (белый цвет)
-- **Circle** - реализация абстрактного класса
-- **Calculator** - обычный класс с методами
-- **Square** - еще одна реализация абстрактного класса
-- **Product** - датакласс с методами
-- **NotificationService** - интерфейс
+Basic examples of the different class kinds:
+- **RegularClass** - regular class (default colour)
+- **AbstractShape** - abstract class (white background)
+- **User** - dataclass (green background)
+- **Point** - frozen dataclass (green background)
+- **DatabaseConnection** - interface (white background)
+- **Circle** - implementation of an abstract class
+- **Calculator** - regular class with methods
+- **Square** - another implementation of an abstract class
+- **Product** - dataclass with methods
+- **NotificationService** - interface
 
 ### 2. `advanced_examples.py`
-Продвинутые примеры с более сложной структурой:
-- **Status** - перечисление (enum)
-- **AbstractRepository** - абстрактный класс с множественными абстрактными методами
-- **Order** - сложный датакласс с полями по умолчанию
-- **EntityWithTimestamps** - класс с множественным наследованием
-- **Validator** - интерфейс
-- **InMemoryRepository** - конкретная реализация абстрактного класса
-- **Customer** - датакласс с вложенными структурами
-- **AbstractPaymentProcessor** - абстрактный класс с конкретными методами
-- **Logger** - обычный класс с декораторами методов
-- **ConfigProvider** - интерфейс
+Advanced examples with a richer structure:
+- **Status** - enum
+- **AbstractRepository** - abstract class with several abstract methods
+- **Order** - complex dataclass with default field values
+- **EntityWithTimestamps** - class with multiple inheritance
+- **Validator** - interface
+- **InMemoryRepository** - concrete implementation of an abstract class
+- **Customer** - dataclass with nested structures
+- **AbstractPaymentProcessor** - abstract class with concrete methods
+- **Logger** - regular class with decorated methods
+- **ConfigProvider** - interface
 
 ### 3. `edge_cases.py`
-Граничные случаи и сложные сценарии:
-- **DataClassWithMethods** - датакласс с дополнительными методами
-- **ImplicitDataClass** - класс без методов, но с полями
-- **EmptyInterface** - пустой интерфейс
-- **PureAbstractClass** - чисто абстрактный класс
-- **ComplexDataClass** - сложный датакласс с пост-инициализацией
-- **ComplexClass** - сложный обычный класс с различными типами методов
-- **AbstractWithConcrete** - абстрактный класс с конкретными методами
-- **ConcreteImplementation** - конкретная реализация
-- **DerivedDataClass** - наследование датаклассов
-- **MultipleInheritanceClass** - множественное наследование
+Edge cases and tricky scenarios:
+- **DataClassWithMethods** - dataclass carrying extra methods
+- **ImplicitDataClass** - class without methods but with fields
+- **EmptyInterface** - empty interface
+- **PureAbstractClass** - purely abstract class
+- **ComplexDataClass** - complex dataclass with post-initialisation
+- **ComplexClass** - complex regular class with assorted method kinds
+- **AbstractWithConcrete** - abstract class with concrete methods
+- **ConcreteImplementation** - concrete implementation
+- **DerivedDataClass** - dataclass inheritance
+- **MultipleInheritanceClass** - multiple inheritance
 
-## Как использовать
+## How to use
 
-1. Сгенерировать UML диаграмму для всех примеров:
+1. Generate a UML diagram for every example:
    ```bash
    python py2uml.py generate examples_custom_formatting output_examples.puml
    ```
 
-2. Сгенерировать диаграмму для конкретного файла:
+2. Generate a diagram for a single file:
    ```bash
    python py2uml.py generate examples_custom_formatting/sample_classes.py output_sample.puml
    ```
 
-3. Использовать новый API:
+3. Use the API directly:
    ```python
    from core.generator import UMLGenerator
    from core.file_filter import FileFilter
-   
+
    file_filter = FileFilter("examples_custom_formatting")
    generator = UMLGenerator("examples_custom_formatting", file_filter)
    uml_output = generator.generate_uml()
    ```
 
-## Ожидаемые результаты форматирования
+## Expected formatting
 
-### Типы классов и их стилизация:
+### Class kinds and their styling
 
-1. **Обычный класс**: `class "ClassName" {` (стандартный цвет)
-2. **Абстрактный класс**: `abstract "ClassName" #FFFFFF {` (белый цвет)
-3. **Датакласс**: `class "ClassName" #90EE90 {` (зеленый цвет)
-4. **Интерфейс**: `interface "ClassName" #FFFFFF {` (белый цвет)
+1. **Regular class**: `class "ClassName" {` (default colour)
+2. **Abstract class**: `abstract "ClassName" #FFFFFF {` (white background)
+3. **Dataclass**: `class "ClassName" #90EE90 {` (green background)
+4. **Interface**: `interface "ClassName" #FFFFFF {` (white background)
 
-### Примеры PlantUML вывода:
+### Sample PlantUML output
 
 ```plantuml
 class "RegularClass" {
@@ -110,11 +111,11 @@ interface "DatabaseConnection" #FFFFFF {
 }
 ```
 
-## Особенности реализации
+## Implementation notes
 
-- Датаклассы больше не отображаются с ключевым словом `dataclass`
-- Вместо этого используется `class` с зеленым цветом фона
-- Абстрактные классы используют `abstract` с белым цветом
-- Интерфейсы используют `interface` с белым цветом
-- Обычные классы остаются без изменений (стандартный цвет)
-- Декоратор `@dataclass` не добавляется к названию класса
+- Dataclasses are no longer rendered with the `dataclass` keyword
+- They use `class` with a green background instead
+- Abstract classes use `abstract` with a white background
+- Interfaces use `interface` with a white background
+- Regular classes are unchanged (default colour)
+- The `@dataclass` decorator is not appended to the class name

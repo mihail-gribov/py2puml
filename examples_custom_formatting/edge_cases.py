@@ -1,46 +1,46 @@
 #!/usr/bin/env python3
 """
-Граничные случаи для демонстрации системы форматирования.
+Edge cases for the formatting system.
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
-# 1. Класс с декоратором @dataclass, но с методами - должен быть dataclass
+# 1. Class decorated with @dataclass but carrying methods - still a dataclass
 @dataclass
 class DataClassWithMethods:
-    """Датакласс с дополнительными методами."""
+    """Dataclass with extra methods."""
     name: str
     value: int
     
     def get_display_name(self) -> str:
-        """Получить отображаемое имя."""
+        """Return the display name."""
         return f"DataClass: {self.name}"
     
     def calculate(self, multiplier: int) -> int:
-        """Вычислить значение с множителем."""
+        """Compute the value with a multiplier."""
         return self.value * multiplier
 
 
-# 2. Класс без методов, но с полями - должен быть dataclass
+# 2. Class without methods but with fields - should be a dataclass
 class ImplicitDataClass:
-    """Класс, который ведет себя как датакласс."""
+    """Class that behaves like a dataclass."""
     
     def __init__(self, field1: str, field2: int):
         self.field1 = field1
         self.field2 = field2
 
 
-# 3. Класс без методов и без полей - должен быть interface
+# 3. Class without methods and without fields - should be an interface
 class EmptyInterface:
-    """Пустой интерфейс."""
+    """Empty interface."""
     pass
 
 
-# 4. Абстрактный класс без конкретных методов
+# 4. Abstract class without concrete methods
 class PureAbstractClass(ABC):
-    """Чисто абстрактный класс."""
+    """Purely abstract class."""
     
     @abstractmethod
     def method1(self):
@@ -51,27 +51,27 @@ class PureAbstractClass(ABC):
         pass
 
 
-# 5. Класс с множественными декораторами
+# 5. Class with several decorators
 @dataclass
 class ComplexDataClass:
-    """Сложный датакласс."""
+    """Complex dataclass."""
     id: int
     name: str
     description: str = ""
     
     def __post_init__(self):
-        """Пост-инициализация."""
+        """Post-initialisation hook."""
         if not self.description:
             self.description = f"Description for {self.name}"
     
     def get_info(self) -> str:
-        """Получить информацию."""
+        """Return the details."""
         return f"ID: {self.id}, Name: {self.name}, Description: {self.description}"
 
 
-# 6. Обычный класс с множественными методами
+# 6. Regular class with several methods
 class ComplexClass:
-    """Сложный обычный класс."""
+    """Complex regular class."""
     
     def __init__(self, name: str):
         self.name = name
@@ -79,109 +79,109 @@ class ComplexClass:
         self.__very_private = "very private"
     
     def public_method(self) -> str:
-        """Публичный метод."""
+        """Public method."""
         return f"Public method of {self.name}"
     
     def _protected_method(self) -> str:
-        """Защищенный метод."""
+        """Protected method."""
         return f"Protected method of {self.name}"
     
     def __private_method(self) -> str:
-        """Приватный метод."""
+        """Private method."""
         return f"Private method of {self.name}"
     
     @property
     def name_property(self) -> str:
-        """Свойство для имени."""
+        """Name property."""
         return self.name
     
     @name_property.setter
     def name_property(self, value: str) -> None:
-        """Сеттер для имени."""
+        """Name setter."""
         self.name = value
     
     @staticmethod
     def static_method() -> str:
-        """Статический метод."""
+        """Static method."""
         return "Static method"
     
     @classmethod
     def class_method(cls) -> str:
-        """Метод класса."""
+        """Class method."""
         return f"Class method of {cls.__name__}"
 
 
-# 7. Абстрактный класс с конкретными методами
+# 7. Abstract class with concrete methods
 class AbstractWithConcrete(ABC):
-    """Абстрактный класс с конкретными методами."""
+    """Abstract class with concrete methods."""
     
     def __init__(self, name: str):
         self.name = name
     
     @abstractmethod
     def abstract_method(self):
-        """Абстрактный метод."""
+        """Abstract method."""
         pass
     
     def concrete_method(self) -> str:
-        """Конкретный метод."""
+        """Concrete method."""
         return f"Concrete method of {self.name}"
     
     def another_concrete_method(self) -> str:
-        """Еще один конкретный метод."""
+        """Another concrete method."""
         return f"Another concrete method of {self.name}"
 
 
-# 8. Класс с наследованием от абстрактного
+# 8. Class inheriting from an abstract one
 class ConcreteImplementation(AbstractWithConcrete):
-    """Конкретная реализация абстрактного класса."""
+    """Concrete implementation of an abstract class."""
     
     def __init__(self, name: str, value: int):
         super().__init__(name)
         self.value = value
     
     def abstract_method(self):
-        """Реализация абстрактного метода."""
+        """Implementation of an abstract method."""
         return f"Implementation of abstract method: {self.name} = {self.value}"
 
 
-# 9. Датакласс с наследованием
+# 9. Dataclass with inheritance
 @dataclass
 class BaseDataClass:
-    """Базовый датакласс."""
+    """Base dataclass."""
     id: int
     name: str
 
 
 @dataclass
 class DerivedDataClass(BaseDataClass):
-    """Наследник датакласса."""
+    """Subclass of a dataclass."""
     description: str
     is_active: bool = True
     
     def get_full_info(self) -> str:
-        """Получить полную информацию."""
+        """Return the full details."""
         status = "active" if self.is_active else "inactive"
         return f"{self.name} (ID: {self.id}): {self.description} - {status}"
 
 
-# 10. Класс с множественным наследованием
+# 10. Class with multiple inheritance
 class Mixin1:
-    """Первый миксин."""
+    """First mixin."""
     
     def method1(self) -> str:
         return "Mixin1 method"
 
 
 class Mixin2:
-    """Второй миксин."""
+    """Second mixin."""
     
     def method2(self) -> str:
         return "Mixin2 method"
 
 
 class MultipleInheritanceClass(Mixin1, Mixin2):
-    """Класс с множественным наследованием."""
+    """Class with multiple inheritance."""
     
     def __init__(self, name: str):
         self.name = name
