@@ -60,7 +60,7 @@ class UMLGenerator:
             
             if not pathlist:
                 print(f"Warning: No Python files found in {self.directory}")
-                return "@startuml\nnote right : Директория пуста\n@enduml"
+                return "@startuml\nnote right : Directory is empty\n@enduml"
                 
         except Exception as e:
             error_msg = f"Error scanning directory {self.directory}: {e}"
@@ -93,7 +93,7 @@ class UMLGenerator:
                     # File with errors - red color and special icon
                     self.uml += f'package "{package_name}" <<Frame>> #FF0000 {{\n'
                     # Add comment with error descriptions
-                    self.uml += f'  note right : Ошибки:\n'
+                    self.uml += f'  note right : Errors:\n'
                     for error in self.parser.files_with_errors[str(path)]:
                         self.uml += f'  note right : - {error}\n'
                 else:
