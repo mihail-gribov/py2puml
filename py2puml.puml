@@ -1,15 +1,33 @@
 @startuml
-package "uml_generator" <<Frame>> #F0F0FF {
-  class UMLGenerator {
+package "mcp_file_analyzer" <<Frame>> #F0F0FF {
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+  class "MCPFileAnalyzer" {
+    + analyzer
+    ....
+    ~ __init__()
+    # _validate_file_path(file_path)
+    + get_file_structure(file_path)
+    + handle_mcp_request(request)
+  }
+}
+package "__main__" <<Frame>> #F0F0FF {
+}
+package "uml_generator_adapter" <<Frame>> #F0F0FF {
+  class "UMLGenerator" {
     + all_class_bases
     + directory
     + errors
+    + file_filter
     + files_with_errors
-    + gitignore_specs
+    + generator
+    + parser
     + uml
     + use_gitignore
     ....
     ~ __init__(directory_path, use_gitignore)
+    # _extract_documentation(node)
+    # _get_file_summary(file_path, classes, functions, variables)
     # _load_gitignore_patterns()
     # _load_simple_gitignore_patterns(gitignore_file)
     # _match_simple_pattern(file_path, pattern)
@@ -19,6 +37,7 @@ package "uml_generator" <<Frame>> #F0F0FF {
     # _should_ignore_pathspec(file_path)
     # _should_ignore_simple(file_path)
     + add_inheritance_relations()
+    + describe_file(file_path, format, include_docs)
     + determine_class_type(has_fields, abstract_method_count, total_method_count, bases)
     + extract_fields_from_init(init_method)
     + format_class_info(class_info)
@@ -34,79 +53,527 @@ package "uml_generator" <<Frame>> #F0F0FF {
     + visibility(name)
   }
 }
-package "main" <<Frame>> #F0F0FF {
+package "__init__" <<Frame>> #F0F0FF {
+  class "Global Variables" << (V,#AAAAFF) >> {
+    ~ __version__
+    ~ __author__
+    ~ __all__
+  }
+}
+package "cli" <<Frame>> #F0F0FF {
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+}
+package "py2uml" <<Frame>> #F0F0FF {
+  class "Global Variables" << (V,#AAAAFF) >> {
+    + CLASS_STYLE_CONFIG
+  }
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+  class "PythonParser" {
+    + errors
+    + files_with_errors
+    ....
+    ~ __init__()
+    # _determine_class_type(has_fields, abstract_method_count, total_method_count, bases, decorators)
+    # _extract_decorators(node)
+    # _extract_fields_from_init(init_method)
+    # _format_name_with_decorators(name, decorators)
+    # _get_decorator_name(decorator)
+    # _get_type_annotation(annotation)
+    # _getter_raises_attribute_error(property_node)
+    # _is_decorator_function(node)
+    # _is_property_method(node)
+    # _is_property_setter_or_deleter(node)
+    # _parse_file_partially(content, file_path)
+    # _process_attributes(body_item)
+    # _process_class_def(node)
+    # _process_fields(body_item)
+    # _process_function_def(node)
+    # _process_global_vars(node)
+    # _process_method_def(body_item)
+    # _process_property_method(property_node, class_body)
+    # _visibility(name)
+    + parse_directory(directory_path)
+    + parse_file(file_path)
+  }
+  class "FileFilter" {
+    + directory
+    + gitignore_specs
+    + use_gitignore
+    ....
+    ~ __init__(directory_path, use_gitignore)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + should_ignore(file_path)
+  }
+  class "UMLGenerator" {
+    + all_class_bases
+    + directory
+    + errors
+    + file_filter
+    + files_with_errors
+    + parser
+    + uml
+    ....
+    ~ __init__(directory_path, file_filter)
+    # _add_inheritance_relations()
+    # _format_class_info(class_info)
+    + generate_uml()
+  }
+  class "FileAnalyzer" {
+    + directory
+    + parser
+    ....
+    ~ __init__(directory_path)
+    # _extract_access_level(property_info)
+    # _extract_documentation(node)
+    # _format_describe_json(data)
+    # _format_describe_text(data)
+    # _format_describe_yaml(data)
+    # _format_output(data, format)
+    # _get_file_summary(file_path, classes, functions, variables)
+    + describe_file(file_path, format, include_docs)
+  }
+}
+package "cli_direct" <<Frame>> #F0F0FF {
+  class "+ create_parser()" << (F,#DDDD00) >> {
+  }
+  class "+ handle_generate_command(args: argparse.Namespace)" << (F,#DDDD00) >> {
+  }
+  class "+ handle_describe_command(args: argparse.Namespace)" << (F,#DDDD00) >> {
+  }
+  class "+ main()" << (F,#DDDD00) >> {
+  }
+}
+package "utils.error_handling" <<Frame>> #F0F0FF {
+  class "+ validate_file_path(file_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_directory_path(directory_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_output_path(output_path: str)" << (F,#DDDD00) >> {
+  }
+  class "+ validate_format(format_name: str)" << (F,#DDDD00) >> {
+  }
+  class "+ handle_cli_error(error: Exception, exit_code: int)" << (F,#DDDD00) >> {
+  }
+  class "+ print_warnings(warnings: list)" << (F,#DDDD00) >> {
+  }
+  interface "CLIError" << (C,#FFFFFF) >> {
+  }
+  interface "ValidationError" << (C,#FFFFFF) >> {
+  }
+  interface "FileNotFoundError" << (C,#FFFFFF) >> {
+  }
+  interface "DirectoryNotFoundError" << (C,#FFFFFF) >> {
+  }
+  interface "PermissionError" << (C,#FFFFFF) >> {
+  }
+}
+package "utils.__init__" <<Frame>> #F0F0FF {
+}
+package "examples_custom_formatting.edge_cases" <<Frame>> #F0F0FF {
+  class "DataClassWithMethods" << (C,#90EE90) >> {
+    + calculate(multiplier)
+    + get_display_name()
+    __Static__
+    + name: str
+    + value: int
+  }
+  class "ImplicitDataClass" {
+    + field1
+    + field2
+    ....
+    ~ __init__(field1, field2)
+  }
+  interface "EmptyInterface" << (C,#FFFFFF) >> {
+  }
+  abstract "PureAbstractClass" << (C,#FFFFFF) >> {
+    + {abstract} method1()
+    + {abstract} method2()
+  }
+  class "ComplexDataClass" << (C,#90EE90) >> {
+    ~ __post_init__()
+    + get_info()
+    __Static__
+    + description: str
+    + id: int
+    + name: str
+  }
+  class "ComplexClass" {
+    - __very_private
+    # _private_field
+    + name
+    ....
+    + name_property: str {read write}
+    ~ __init__(name)
+    - __private_method()
+    # _protected_method()
+    + public_method()
+    __Static__
+    + class_method()
+    + {static} static_method()
+  }
+  abstract "AbstractWithConcrete" << (C,#FFFFFF) >> {
+    + name
+    ....
+    ~ __init__(name)
+    + {abstract} abstract_method()
+    + another_concrete_method()
+    + concrete_method()
+  }
+  class "ConcreteImplementation" {
+    + value
+    ....
+    ~ __init__(name, value)
+    + abstract_method()
+  }
+  class "BaseDataClass" << (C,#90EE90) >> {
+    + id: int
+    + name: str
+  }
+  class "DerivedDataClass" << (C,#90EE90) >> {
+    + get_full_info()
+    __Static__
+    + description: str
+    + is_active: bool
+  }
+  class "Mixin1" {
+    + method1()
+  }
+  class "Mixin2" {
+    + method2()
+  }
+  class "MultipleInheritanceClass" {
+    + name
+    ....
+    ~ __init__(name)
+    + all_methods()
+    + get_name()
+  }
+}
+package "examples_custom_formatting.advanced_examples" <<Frame>> #F0F0FF {
+  interface "Status" << (C,#FFFFFF) >> {
+  }
+  abstract "AbstractRepository" << (C,#FFFFFF) >> {
+    + {abstract} delete(entity_id)
+    + {abstract} find_all()
+    + {abstract} find_by_id(entity_id)
+    + {abstract} save(entity)
+  }
+  class "Order" << (C,#90EE90) >> {
+    + add_item(name, quantity, price)
+    + get_item_count()
+    + is_empty()
+    __Static__
+    + created_at: Optional[str]
+    + customer_name: str
+    + items: List[Dict[<ast.Tuple object at 0x7203bd747a90>]]
+    + order_id: str
+    + status: Status
+    + total_amount: float
+  }
+  class "BaseEntity" {
+    + created_at
+    + entity_id
+    + updated_at
+    ....
+    ~ __init__(entity_id)
+    + get_id()
+  }
+  class "TimestampMixin" {
+    + update_timestamp()
+  }
+  class "EntityWithTimestamps" {
+    + name
+    ....
+    ~ __init__(entity_id, name)
+    + get_name()
+  }
+  interface "Validator" << (C,#FFFFFF) >> {
+  }
+  class "InMemoryRepository" {
+    ~ __init__()
+    + delete(entity_id)
+    + find_all()
+    + find_by_id(entity_id)
+    + save(entity)
+  }
+  class "Address" << (C,#90EE90) >> {
+    + city: str
+    + country: str
+    + postal_code: str
+    + street: str
+  }
+  class "Customer" << (C,#90EE90) >> {
+    + get_full_address()
+    + is_local()
+    __Static__
+    + address: Address
+    + customer_id: str
+    + email: str
+    + is_vip: bool
+    + name: str
+    + phone: Optional[str]
+  }
+  abstract "AbstractPaymentProcessor" << (C,#FFFFFF) >> {
+    + api_key
+    + is_configured
+    ....
+    ~ __init__(api_key)
+    + is_ready()
+    + {abstract} process_payment(amount, currency)
+    + {abstract} refund_payment(transaction_id)
+  }
+  class "Logger" {
+    + name
+    ....
+    ~ __init__(name)
+    + clear_logs()
+    + error(message)
+    + get_logs()
+    + info(message)
+  }
+  interface "ConfigProvider" << (C,#FFFFFF) >> {
+  }
+}
+package "examples_custom_formatting.sample_classes" <<Frame>> #F0F0FF {
+  class "RegularClass" {
+    + name
+    + value
+    ....
+    ~ __init__(name, value)
+    + get_name()
+    + get_value()
+    + set_value(new_value)
+  }
+  abstract "AbstractShape" << (C,#FFFFFF) >> {
+    + color
+    ....
+    ~ __init__(color)
+    + {abstract} area()
+    + get_color()
+    + {abstract} perimeter()
+  }
+  class "User" << (C,#90EE90) >> {
+    + get_display_name()
+    + is_adult()
+    __Static__
+    + age: int
+    + email: str
+    + is_active: bool
+    + name: str
+  }
+  class "Point" << (C,#90EE90) >> {
+    + distance_to_origin()
+    __Static__
+    + x: float
+    + y: float
+  }
+  interface "DatabaseConnection" << (C,#FFFFFF) >> {
+  }
+  class "Circle" {
+    + radius
+    ....
+    ~ __init__(color, radius)
+    + area()
+    + perimeter()
+  }
+  class "Calculator" {
+    ~ __init__()
+    + add(a, b)
+    + get_history()
+    + multiply(a, b)
+  }
+  class "Square" {
+    + side
+    ....
+    ~ __init__(color, side)
+    + area()
+    + perimeter()
+  }
+  class "Product" << (C,#90EE90) >> {
+    + get_formatted_price()
+    + is_expensive(threshold)
+    __Static__
+    + category: str
+    + in_stock: bool
+    + name: str
+    + price: float
+  }
+  interface "NotificationService" << (C,#FFFFFF) >> {
+  }
 }
 package "tests.conftest" <<Frame>> #F0F0FF {
-  class "temp_directory()" << (F,#DDDD00) >> {
+}
+package "tests.test_installer" <<Frame>> #F0F0FF {
+  class "TestInstaller" {
+    + setUp()
+    + tearDown()
+    + test_cursor_configuration_creation()
+    + test_file_path_validation()
+    + test_install_py2puml_failure@patch(mock_run)
+    + test_install_py2puml_success@patch(mock_run)
+    + test_mcp_server_executable@patch(mock_chmod)
+    + test_mcp_server_test@patch(mock_run)
+    + test_prerequisites_check_pip@patch(mock_run)
+    + test_prerequisites_check_python@patch(mock_run)
   }
-  class "sample_python_file(temp_directory)" << (F,#DDDD00) >> {
-  }
-  class "complex_python_file(temp_directory)" << (F,#DDDD00) >> {
-  }
-  class "broken_python_file(temp_directory)" << (F,#DDDD00) >> {
-  }
-  class "empty_directory(temp_directory)" << (F,#DDDD00) >> {
-  }
-  class "project_structure(temp_directory)" << (F,#DDDD00) >> {
+  class "TestInstallerIntegration" {
+    + create_mock_project()
+    + setUp()
+    + tearDown()
+    + test_full_installation_process@patch(mock_run)
+    + test_mcp_server_functionality()
+    + test_project_structure_validation()
   }
 }
 package "tests.__init__" <<Frame>> #F0F0FF {
 }
-package "test_project.src.main" <<Frame>> #F0F0FF {
-  class User {
-    + name
+package "core.file_filter" <<Frame>> #F0F0FF {
+  class "FileFilter" {
+    + directory
+    + gitignore_specs
+    + use_gitignore
     ....
-    ~ __init__(name)
-    + get_name()
+    ~ __init__(directory_path, use_gitignore)
+    # _load_gitignore_patterns()
+    # _load_simple_gitignore_patterns(gitignore_file)
+    # _match_simple_pattern(file_path, pattern)
+    # _should_ignore_pathspec(file_path)
+    # _should_ignore_simple(file_path)
+    + should_ignore(file_path)
+  }
+}
+package "core.__init__" <<Frame>> #F0F0FF {
+}
+package "core.generator" <<Frame>> #F0F0FF {
+  class "UMLGenerator" {
+    + all_class_bases
+    + directory
+    + errors
+    + file_filter
+    + files_with_errors
+    + parser
+    + uml
+    ....
+    ~ __init__(directory_path, file_filter)
+    # _add_inheritance_relations()
+    # _format_class_info(class_info)
+    + generate_uml()
+  }
+}
+package "core.parser" <<Frame>> #F0F0FF {
+  class "Global Variables" << (V,#AAAAFF) >> {
+    + CLASS_STYLE_CONFIG
+  }
+  class "PythonParser" {
+    + errors
+    + files_with_errors
+    ....
+    ~ __init__()
+    # _determine_class_type(has_fields, abstract_method_count, total_method_count, bases, decorators)
+    # _extract_decorators(node)
+    # _extract_documentation(node)
+    # _extract_fields_from_init(init_method)
+    # _format_name_with_decorators(name, decorators)
+    # _get_decorator_name(decorator)
+    # _get_type_annotation(annotation)
+    # _getter_raises_attribute_error(property_node)
+    # _is_decorator_function(node)
+    # _is_property_method(node)
+    # _is_property_setter_or_deleter(node)
+    # _parse_file_partially(content, file_path)
+    # _process_attributes(body_item)
+    # _process_class_def(node)
+    # _process_fields(body_item)
+    # _process_function_def(node)
+    # _process_global_vars(node)
+    # _process_method_def(body_item)
+    # _process_property_method(property_node, class_body)
+    # _visibility(name)
+    + get_class_style(class_type)
+    + parse_directory(directory_path)
+    + parse_file(file_path)
+  }
+}
+package "core.analyzer" <<Frame>> #F0F0FF {
+  class "FileAnalyzer" {
+    + directory
+    + parser
+    ....
+    ~ __init__(directory_path)
+    # _extract_access_level(property_info)
+    # _extract_documentation(node)
+    # _format_describe_json(data)
+    # _format_describe_text(data)
+    # _format_describe_yaml(data)
+    # _format_output(data, format)
+    # _get_file_summary(file_path, classes, functions, variables)
+    + describe_file(file_path, format, include_docs)
   }
 }
 package "tests.functional.__init__" <<Frame>> #F0F0FF {
 }
 package "tests.functional.test_output_format" <<Frame>> #F0F0FF {
-  class TestOutputFormat {
+  class "TestOutputFormat" {
     + setup_method()
     + teardown_method()
-    + test_abstract_classes_and_interfaces()
-    + test_class_visibility_representation()
-    + test_complex_type_annotations()
-    + test_empty_project_output()
-    + test_error_handling_in_output()
-    + test_global_variables_and_functions()
-    + test_inheritance_relationships()
-    + test_large_project_structure()
-    + test_method_parameters()
-    + test_package_structure()
-    + test_plantuml_syntax_completeness()
-    + test_plantuml_syntax_validity()
-    + test_static_methods_and_attributes()
+    + test_plantuml_abstract_classes()
+    + test_plantuml_complex_structure()
+    + test_plantuml_empty_directory()
+    + test_plantuml_encoding_handling()
+    + test_plantuml_error_handling()
+    + test_plantuml_error_visualization()
+    + test_plantuml_format_generation()
+    + test_plantuml_gitignore_filtering()
+    + test_plantuml_global_functions()
+    + test_plantuml_global_variables()
+    + test_plantuml_inheritance()
+    + test_plantuml_interfaces()
+    + test_plantuml_methods_and_fields()
+    + test_plantuml_package_structure()
+    + test_plantuml_special_characters()
   }
 }
 package "tests.edge_cases.__init__" <<Frame>> #F0F0FF {
 }
 package "tests.edge_cases.test_edge_cases" <<Frame>> #F0F0FF {
-  class TestEdgeCases {
+  class "TestEdgeCases" {
     + setup_method()
     + teardown_method()
-    + test_comments_and_docstrings()
-    + test_complex_ast_structures()
-    + test_decorators()
-    + test_empty_classes()
+    + test_directory_with_hidden_files()
+    + test_directory_with_only_non_python_files()
+    + test_directory_with_symlinks()
     + test_empty_directory()
-    + test_files_with_only_global_variables()
-    + test_files_without_classes()
-    + test_imports_and_from_imports()
-    + test_nested_packages()
-    + test_paths_with_special_characters()
-    + test_special_characters_in_names()
-    + test_symlinks_and_cyclic_references()
-    + test_try_except_blocks()
-    + test_unicode_characters()
-    + test_very_large_files()
-    + test_very_long_names()
+    + test_empty_file()
+    + test_file_with_async_await()
+    + test_file_with_circular_imports()
+    + test_file_with_complex_decorators()
+    + test_file_with_f_strings()
+    + test_file_with_import_errors()
+    + test_file_with_match_statement()
+    + test_file_with_mixed_encodings()
+    + test_file_with_multiple_inheritance()
+    + test_file_with_nested_classes()
+    + test_file_with_only_comments()
+    + test_file_with_only_whitespace()
+    + test_file_with_permission_errors()
+    + test_file_with_special_characters_in_names()
+    + test_file_with_syntax_errors()
+    + test_file_with_type_annotations()
+    + test_file_with_unicode_characters()
+    + test_file_with_unicode_errors()
+    + test_file_with_very_large_content()
+    + test_file_with_very_long_names()
+    + test_file_with_walrus_operator()
   }
 }
 package "tests.unit.test_uml_generator" <<Frame>> #F0F0FF {
-  class TestUMLGenerator {
+  class "TestUMLGenerator" {
     + setup_method()
     + teardown_method()
     + test_determine_class_type_abstract()
@@ -140,8 +607,34 @@ package "tests.unit.test_uml_generator" <<Frame>> #F0F0FF {
     + test_visibility_public()
   }
 }
+package "tests.unit.test_describe_file" <<Frame>> #F0F0FF {
+  class "TestDescribeFile" {
+    + setup_method()
+    + teardown_method()
+    + test_async_functions()
+    + test_class_documentation_extraction()
+    + test_complex_signatures()
+    + test_decorators()
+    + test_empty_file()
+    + test_file_not_found()
+    + test_file_with_only_comments()
+    + test_function_documentation_extraction()
+    + test_inheritance_classes()
+    + test_json_format()
+    + test_multiline_docstrings()
+    + test_nested_classes()
+    + test_no_docs_flag()
+    + test_simple_file_parsing()
+    + test_special_characters()
+    + test_syntax_error_handling()
+    + test_type_annotations()
+    + test_unsupported_format()
+    + test_various_docstring_styles()
+    + test_yaml_format()
+  }
+}
 package "tests.unit.test_gitignore_functionality" <<Frame>> #F0F0FF {
-  class TestGitignoreFunctionality {
+  class "TestGitignoreFunctionality" {
     + setup_method()
     + teardown_method()
     + test_gitignore_disabled()
@@ -163,8 +656,44 @@ package "tests.unit.test_gitignore_functionality" <<Frame>> #F0F0FF {
 }
 package "tests.unit.__init__" <<Frame>> #F0F0FF {
 }
+package "tests.unit.test_new_architecture" <<Frame>> #F0F0FF {
+  class "TestFileFilter" {
+    + setup_method()
+    + teardown_method()
+    + test_should_ignore_disabled()
+    + test_should_ignore_with_gitignore()
+    + test_should_ignore_without_gitignore()
+  }
+  class "TestPythonParser" {
+    + setup_method()
+    + teardown_method()
+    + test_parse_file_nonexistent()
+    + test_parse_file_syntax_error()
+    + test_parse_file_valid()
+    + test_visibility_methods()
+  }
+  class "TestUMLGenerator" {
+    + setup_method()
+    + teardown_method()
+    + test_add_inheritance_relations()
+    + test_format_class_info()
+    + test_generate_uml_empty_directory()
+    + test_generate_uml_with_files()
+  }
+  class "TestFileAnalyzer" {
+    + setup_method()
+    + teardown_method()
+    + test_describe_file_invalid_format()
+    + test_describe_file_json_format()
+    + test_describe_file_nonexistent()
+    + test_describe_file_text_format()
+    + test_describe_file_yaml_format()
+    + test_get_file_summary()
+  }
+}
 package "tests.integration.test_gitignore_cli" <<Frame>> #F0F0FF {
-  class TestGitignoreCLI {
+  class "TestGitignoreCLI" {
+    + run_cli_command(args)
     + setup_method()
     + teardown_method()
     + test_cli_gitignore_help_text()
@@ -179,30 +708,78 @@ package "tests.integration.test_gitignore_cli" <<Frame>> #F0F0FF {
     + test_generate_uml_without_gitignore()
   }
 }
+package "tests.integration.test_describe_file_cli" <<Frame>> #F0F0FF {
+  class "TestDescribeFileCLI" {
+    + create_test_file(content)
+    + run_cli_command(args)
+    + setup_method()
+    + teardown_method()
+    + test_basic_describe_file_command()
+    + test_combined_flags()
+    + test_complex_file()
+    + test_encoding_handling()
+    + test_file_not_found()
+    + test_help_output()
+    + test_invalid_format()
+    + test_json_format()
+    + test_large_file_handling()
+    + test_missing_required_argument()
+    + test_mutually_exclusive_arguments()
+    + test_no_docs_flag()
+    + test_syntax_error_handling()
+    + test_yaml_format()
+  }
+}
 package "tests.integration.__init__" <<Frame>> #F0F0FF {
 }
 package "tests.integration.test_cli" <<Frame>> #F0F0FF {
-  class TestCLI {
+  class "TestCLI" {
+    + run_cli_command(args)
     + setup_method()
     + teardown_method()
     + test_cli_complex_project()
+    + test_cli_describe_command()
     + test_cli_empty_directory()
     + test_cli_file_as_directory()
+    + test_cli_generate_command()
+    + test_cli_help_output()
     + test_cli_inheritance_relationships()
-    + test_cli_keyboard_interrupt(mock_input)
+    + test_cli_keyboard_interrupt@patch(mock_input)
     + test_cli_missing_arguments()
     + test_cli_nonexistent_directory()
     + test_cli_permission_denied_output()
     + test_cli_syntax_errors_in_code()
-    + test_cli_valid_arguments()
+    + test_cli_version_output()
   }
 }
-package "test_no_gitignore.src.example" <<Frame>> #F0F0FF {
-  class Example {
-    + value
-    ....
-    ~ __init__()
-    + get_value()
+package "tests.fixtures.broken_syntax_sample" <<Frame>> #FF0000 {
+  note right : Ошибки:
+  note right : - Syntax error in tests/fixtures/broken_syntax_sample.py: unterminated string literal (detected at line 14) (broken_syntax_sample.py, line 14)
+  class "+ __init__()" << (F,#DDDD00) >> {
+  }
+  class "+ method_with_error()" << (F,#DDDD00) >> {
+  }
+  class "+ valid_function()" << (F,#DDDD00) >> {
   }
 }
+Exception <|-- CLIError
+CLIError <|-- ValidationError
+CLIError <|-- FileNotFoundError
+CLIError <|-- DirectoryNotFoundError
+CLIError <|-- PermissionError
+ABC <|-- PureAbstractClass
+ABC <|-- AbstractWithConcrete
+AbstractWithConcrete <|-- ConcreteImplementation
+BaseDataClass <|-- DerivedDataClass
+Mixin1 <|-- MultipleInheritanceClass
+Mixin2 <|-- MultipleInheritanceClass
+Enum <|-- Status
+ABC <|-- AbstractRepository
+BaseEntity <|-- EntityWithTimestamps
+TimestampMixin <|-- EntityWithTimestamps
+AbstractRepository <|-- InMemoryRepository
+ABC <|-- AbstractPaymentProcessor
+ABC <|-- AbstractShape
+AbstractShape <|-- Circle
+AbstractShape <|-- Square
 @enduml
